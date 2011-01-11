@@ -3,13 +3,16 @@
 Plugin Name: Sitewide Privacy Options for WordPress Multisite
 Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-wordpress-mu
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
-Author: Andrew Billits (Incsub)
-Version: 1.0.2
+Author: Ivan Shaovchev, Andrew Billits (Incsub)
+Author URI: http://ivan.sh
+Version: 1.0.3
+Network: true
 WDP ID: 52
+License: GNU General Public License (Version 2 - GPLv2)
 */
 
 /* 
-Copyright 2007-2010 Incsub (http://incsub.com)
+Copyright 2007-2011 Incsub (http://incsub.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License (Version 2 - GPLv2) as published by
@@ -30,8 +33,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //------------------------------------------------------------------------//
 
 //------------------------------------------------------------------------//
-//---Hook-----------------------------------------------------------------//
+//---Hooks-----------------------------------------------------------------//
 //------------------------------------------------------------------------//
+
 add_action('wpmu_options', 'additional_privacy_site_admin_options');
 add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process');
 add_action("blog_privacy_selector", 'additional_privacy_blog_options');
@@ -39,6 +43,7 @@ add_action('admin_menu', 'additional_privacy_modify_menu_items',99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
 add_action('template_redirect', 'additional_privacy');
 add_action("login_form", 'additional_privacy_login_message');
+
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
 //------------------------------------------------------------------------//
@@ -87,7 +92,7 @@ function additional_privacy_site_admin_options_process() {
 	global $wpdb;
 	update_site_option( 'privacy_default' , $_POST['privacy_default']);
 	update_site_option( 'privacy_override' , $_POST['privacy_override']);
-	if (  $_POST['privacy_update_all_blogs'] == 'update' )  {
+	if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
 		$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1'");
 		$query = "SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1'";
 		$blogs = $wpdb->get_results( $query, ARRAY_A );
@@ -101,7 +106,7 @@ function additional_privacy_site_admin_options_process() {
 
 function additional_privacy_modify_menu_items() {
 	global $submenu, $menu, $wpdb;
-	if ( get_site_option('privacy_override', 'yes') == 'no' && !is_site_admin() && $wpdb->blogid != 1 ) {
+	if ( get_site_option('privacy_override', 'yes') == 'no' && !is_super_admin() && $wpdb->blogid != 1 ) {
 			unset( $submenu['options-general.php'][35] );
 	}
 }
@@ -176,19 +181,19 @@ function additional_privacy_deny_message($privacy) {
 }
 
 function additional_privacy_login_message() {
-	if ( $_GET['privacy'] == '1' ) {
+	if ( isset( $_GET['privacy'] ) && $_GET['privacy'] == '1' ) {
 		?>
         <div id="login_error">
         <strong><?php _e('Authorization Required'); ?></strong>: <?php _e('This blog may only be viewed by users who are logged in.'); ?><br />
         </div>
         <?php
-	} else if ( $_GET['privacy'] == '2' ) {
+	} else if ( isset( $_GET['privacy'] ) && $_GET['privacy'] == '2' ) {
 		?>
         <div id="login_error">
         <strong><?php _e('Authorization Required'); ?></strong>: <?php _e('This blog may only be viewed by users who are subscribed to this blog.'); ?><br />
         </div>
         <?php
-	} else if ( $_GET['privacy'] == '3' ) {
+	} else if ( isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '3' ) {
 		?>
         <div id="login_error">
         <strong><?php _e('Authorization Required'); ?></strong>: <?php _e('This blog may only be viewed by administrators.'); ?><br />
@@ -200,18 +205,15 @@ function additional_privacy_login_message() {
 function additional_privacy_blog_options() {
 	$blog_public = get_option('blog_public');
 	?>
-    <p>
+    <br />
     <input id="blog-public" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e('I would like only logged in users to see my blog.') ?></label>
-    </p>
-    <p>
+    <br />
     <input id="blog-norobots" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
-    <label><?php _e('I would like only logged in users who are <em><a href="http:/wp-admin/users.php">registered subscribers</a></em> to see my blog.</label>'); ?></label>
-    </p>
-    <p>
+    <label><?php _e('I would like only logged in users who are registered subscribers to see my blog.</label>'); ?></label>
+    <br />
     <input id="blog-norobots" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e('I would like only administrators of this blog, and network to see my blog.'); ?></label>
-    </p>
     <?php
 }
 
@@ -261,6 +263,16 @@ function additional_privacy_site_admin_options() {
 			</tr>
 		</table>
 	<?php
+}
+
+/* Update Notifications Notice */
+if ( !function_exists( 'wdp_un_check' ) ) {
+    function wdp_un_check() {
+        if ( !class_exists('WPMUDEV_Update_Notifications') && current_user_can('edit_users') )
+            echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
+    }
+    add_action( 'admin_notices', 'wdp_un_check', 5 );
+    add_action( 'network_admin_notices', 'wdp_un_check', 5 );
 }
 
 ?>
