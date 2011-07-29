@@ -3,15 +3,15 @@
 Plugin Name: Sitewide Privacy Options for WordPress Multisite
 Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-wordpress-mu
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
-Author: Ivan Shaovchev, Andrew Billits (Incsub)
-Author URI: http://ivan.sh
-Version: 1.0.3
+Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
+Author URI: http://premium.wpmudev.org
+Version: 1.0.4
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
 */
 
-/* 
+/*
 Copyright 2007-2011 Incsub (http://incsub.com)
 
 This program is free software; you can redistribute it and/or modify
@@ -44,9 +44,21 @@ add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
 add_action('template_redirect', 'additional_privacy');
 add_action("login_form", 'additional_privacy_login_message');
 
+//checking buddypress activity stream
+add_action("bp_activity_before_save", 'hide_activity');
+
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
 //------------------------------------------------------------------------//
+
+
+//hide the posts from private sites in buddypress activity stream
+function hide_activity( $activity ) {
+    if ( 1 != get_option( 'blog_public' ) )
+        $activity->hide_sitewide = true;
+
+    return $activity;
+}
 
 function additional_privacy() {
 	$privacy = get_option('blog_public');
@@ -221,10 +233,10 @@ function additional_privacy_site_admin_options() {
 	$privacy_default = get_site_option('privacy_default', 1);
 	$privacy_override = get_site_option('privacy_override', 'yes');
 	?>
-		<h3><?php _e('Blog Privacy Settings') ?></h3> 
+		<h3><?php _e('Blog Privacy Settings') ?></h3>
 		<table class="form-table">
-			<tr valign="top"> 
-				<th scope="row"><?php _e('Default Setting') ?></th> 
+			<tr valign="top">
+				<th scope="row"><?php _e('Default Setting') ?></th>
 				<td>
 					<label><input name="privacy_default" id="privacy_default" value="1" <?php if ( $privacy_default == '1' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Allow all visitors to all blogs.'); ?>
                     <br />
@@ -243,8 +255,8 @@ function additional_privacy_site_admin_options() {
                     <small><?php _e('A Site Admin can always view any blog, regardless of any privacy setting. (<em>Note:</em> "Site Admin", not an individual blog admin.)'); ?></small></label>
 				</td>
 			</tr>
-			<tr valign="top"> 
-				<th scope="row"><?php _e('Allow Override') ?></th> 
+			<tr valign="top">
+				<th scope="row"><?php _e('Allow Override') ?></th>
 				<td>
 					<input name="privacy_override" id="privacy_override" value="yes" <?php if ( $privacy_override == 'yes' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Yes'); ?>
 					<br />
@@ -253,8 +265,8 @@ function additional_privacy_site_admin_options() {
 					<?php _e('Allow Blog Administrators to modify the privacy setting for their blog(s). Note that Site Admins will always be able to edit blog privacy options.') ?>
 				</td>
 			</tr>
-			<tr valign="top"> 
-				<th scope="row"><?php _e('Update All Blogs') ?></th> 
+			<tr valign="top">
+				<th scope="row"><?php _e('Update All Blogs') ?></th>
 				<td>
 	                <input id="privacy_update_all_blogs" name="privacy_update_all_blogs" value="update" type="checkbox">
 					<br />

@@ -1,7 +1,9 @@
 === Additional Privacy ===
-Authors: Ivan Shaovchev, Andrew Billits (Incsub)
+Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 
 == Changelog ==
+= 1.0.4 =
+* Fixed problem of display posts from private sites in BP Activity stream;
 
 = 1.0.3 =
 * Compatibility update for WordPress 3.1
