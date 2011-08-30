@@ -2,6 +2,10 @@
 Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 
 == Changelog ==
+
+= 1.0.5 =
+* added the language file;
+
 = 1.0.4 =
 * Fixed problem of display posts from private sites in BP Activity stream;
 
