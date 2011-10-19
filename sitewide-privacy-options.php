@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.0.5
+Version: 1.0.6
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -41,13 +41,13 @@ add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process
 add_action("blog_privacy_selector", 'additional_privacy_blog_options');
 add_action('admin_menu', 'additional_privacy_modify_menu_items',99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
-add_action('template_redirect', 'additional_privacy');
+add_action('init', 'additional_privacy');
 add_action("login_form", 'additional_privacy_login_message');
 
 load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 //checking buddypress activity stream
-add_action("bp_activity_before_save", 'hide_activity');
+add_action( "bp_activity_before_save", 'hide_activity' );
 
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
@@ -56,8 +56,20 @@ add_action("bp_activity_before_save", 'hide_activity');
 
 //hide the posts from private sites in buddypress activity stream
 function hide_activity( $activity ) {
-    if ( 1 != get_option( 'blog_public' ) )
-        $activity->hide_sitewide = true;
+
+    if ( function_exists( 'bp_get_root_blog_id' ) )
+        $bp_root_blog_id = bp_get_root_blog_id();
+
+    if ( isset( $bp_root_blog_id ) && get_current_blog_id() != $bp_root_blog_id ) {
+        //ID of BP blog
+        $privacy_bp = get_blog_option( $bp_root_blog_id, 'blog_public' );
+
+        //cheack that BP site Visibility
+        if ( '-1' != $privacy_bp && '-2' != $privacy_bp &&'-3' != $privacy_bp )
+            if ( 1 != get_option( 'blog_public' ) )
+                $activity->hide_sitewide = true;
+
+    }
 
     return $activity;
 }
@@ -65,33 +77,38 @@ function hide_activity( $activity ) {
 function additional_privacy() {
 	$privacy = get_option('blog_public');
 	if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], 'wp-signup') && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
-		if ( $privacy == '-1' ) {
-			if ( !is_user_logged_in() ) {
-				//header("Location: " . get_option('siteurl') . "wp-login.php?privacy=1&redirect_to=" . urlencode($_SERVER['REQUEST_URI']));
-				wp_redirect(get_option('home') . "/wp-login.php?privacy=1&redirect_to=" . urlencode($_SERVER['REQUEST_URI']));
-				exit();
-			}
-		} else if ( $privacy == '-2' ) {
-			if ( !is_user_logged_in() ) {
-				//header("Location: " . get_option('siteurl') . "wp-login.php?privacy=2&redirect_to=" . urlencode($_SERVER['REQUEST_URI']));
-				wp_redirect(get_option('home') . "/wp-login.php?privacy=2&redirect_to=" . urlencode($_SERVER['REQUEST_URI']));
-				exit();
-			} else {
-				if ( !current_user_can('read') ) {
-					additional_privacy_deny_message('2');
-				}
-			}
-		} else if ( $privacy == '-3' ) {
-			if ( !is_user_logged_in() ) {
-				//header("Location: " . get_option('siteurl') . "wp-login.php?privacy=3&redirect_to=" . urlencode($_SERVER['REQUEST_URI']));
-				wp_redirect(get_option('home') . "/wp-login.php?privacy=3&redirect_to=" . urlencode($_SERVER['REQUEST_URI']));
-				exit();
-			} else {
-				if ( !current_user_can('manage_options') ) {
-					additional_privacy_deny_message('3');
-				}
-			}
-		}
+
+        switch( $privacy ) {
+            case '-1': {
+                if ( ! is_user_logged_in() ) {
+                    wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=1&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                    exit();
+                }
+                break;
+            }
+            case '-2': {
+                if ( ! is_user_logged_in() ) {
+                    wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=2&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                    exit();
+                } else {
+                    if ( ! current_user_can( 'read' ) ) {
+                        additional_privacy_deny_message( '2' );
+                    }
+                }
+                break;
+            }
+            case '-3': {
+                if ( ! is_user_logged_in() ) {
+                    wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=3&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                    exit();
+                } else {
+                    if ( ! current_user_can( 'manage_options' ) ) {
+                        additional_privacy_deny_message( '3' );
+                    }
+                }
+                break;
+            }
+        }
 	}
 }
 
