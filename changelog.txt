@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 
 == Changelog ==
 
+= 1.0.7 =
+* Added new feature - "Single password" for access to blog;
+
 = 1.0.6 =
 * Fixed some problems with BP Activity stream;
 * Fixed problem with access to all BP pages;
