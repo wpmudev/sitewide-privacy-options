@@ -38,21 +38,20 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 add_action('wpmu_options', 'additional_privacy_site_admin_options');
 add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process');
-add_action("blog_privacy_selector", 'additional_privacy_blog_options');
-add_action('admin_menu', 'additional_privacy_modify_menu_items',99);
+add_action('blog_privacy_selector', 'additional_privacy_blog_options');
+add_action('admin_menu', 'additional_privacy_modify_menu_items', 99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
 add_action('init', 'additional_privacy');
-add_action("login_form", 'additional_privacy_login_message');
+add_action('login_form', 'additional_privacy_login_message');
 
 load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 //for single password
-add_action("pre_update_option_blog_public", 'save_single_password');
+add_action( 'pre_update_option_blog_public', 'save_single_password' );
 add_action( 'login_head', 'single_password_template' );
 
-
 //checking buddypress activity stream
-add_action( "bp_activity_before_save", 'hide_activity' );
+add_action( 'bp_activity_before_save', 'hide_activity' );
 
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
@@ -67,22 +66,19 @@ function single_password_template( $page ) {
 
         $spo_settings = get_option( 'spo_settings' );
 
-        if ( isset( $_POST['redirect_to'] ) )
-            $redirect_to = $_POST['redirect_to'];
+        if ( isset( $_REQUEST['redirect_to'] ) )
+            $redirect_to = $_REQUEST['redirect_to'];
         else
-            $redirect_to = 'http://www.multisite.wpplugins.org.ua';
+            $redirect_to = home_url();
 
 
         if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
             $value = md5( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
             setcookie( 'spo_blog_access', $value, time() + 1800 );
-
-            wp_safe_redirect( $redirect_to );
-            exit();
-        } else {
-            wp_safe_redirect( $redirect_to );
-            exit();
         }
+
+        wp_safe_redirect( $redirect_to );
+        exit();
     }
 
     if ( isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
@@ -90,7 +86,6 @@ function single_password_template( $page ) {
         ?>
 
         <script type="text/javascript">
-
             jQuery( document ).ready( function() {
                 jQuery( '#loginform' ).attr( 'id', 'loginform4' );
                 jQuery( '#loginform' ).attr( 'name', 'loginform4' );
@@ -100,7 +95,6 @@ function single_password_template( $page ) {
                 jQuery( '#backtoblog' ).remove();
                 jQuery( '#nav' ).remove();
                 jQuery( '#loginform4' ).append('<br /><br /><br /><p><a href="<?php echo $_SERVER['SCRIPT_URI']; ?>"><?php _e('Or login here if you have a username', 'sitewide-privacy-options'); ?></a></p>');
-                //           jQuery( "#user_login" ).hide();
 
                 jQuery( '#loginform4' ).submit( function() {
                     if ( '' == jQuery( '#blog_pass' ).val() ) {
@@ -114,7 +108,6 @@ function single_password_template( $page ) {
                 jQuery( '#loginform4' ).change( function() {
                     jQuery( '#blog_pass' ).css( 'border-color', '' );
                 });
-
 
             });
         </script>
@@ -194,12 +187,10 @@ function additional_privacy() {
             }
             //single password
             case '-4': {
-
-                $privacy_single_pass    = get_option( 'privacy_single_pass', 'yes' );
                 $spo_settings           = get_option( 'spo_settings' );
                 $value                  = md5( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
 
-                if ( !is_user_logged_in() || 'yes' == $privacy_single_pass ) {
+                if ( !is_user_logged_in() ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
                         wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=4&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
                         exit();
@@ -221,9 +212,9 @@ function additional_privacy_set_default($blog_id, $user_id) {
 
 function additional_privacy_site_admin_options_process() {
 	global $wpdb;
-    update_site_option( 'privacy_default' , $_POST['privacy_default']);
-	update_site_option( 'privacy_single_pass' , $_POST['privacy_single_pass']);
-	update_site_option( 'privacy_override' , $_POST['privacy_override']);
+    update_site_option( 'privacy_default' , $_POST['privacy_default'] );
+	update_site_option( 'privacy_override' , $_POST['privacy_override'] );
+    update_site_option( 'privacy_available' , $_POST['privacy_available'] );
 
 	if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
 		$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1'");
@@ -232,7 +223,6 @@ function additional_privacy_site_admin_options_process() {
 		if ( count( $blogs ) > 0 ) {
 			foreach ( $blogs as $blog ){;
                 update_blog_option($blog['blog_id'], "blog_public", $_POST['privacy_default']);
-				update_blog_option($blog['blog_id'], "privacy_single_pass", $_POST['privacy_single_pass']);
 			}
 		}
 	}
@@ -249,7 +239,9 @@ function additional_privacy_modify_menu_items() {
 //---Output Functions-----------------------------------------------------//
 //------------------------------------------------------------------------//
 
-function additional_privacy_deny_message($privacy) {
+function additional_privacy_deny_message( $privacy ) {
+    do_action( 'additional_privacy_deny_message', $privacy );
+
 	header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 	header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
 	header('Pragma: no-cache');
@@ -298,16 +290,15 @@ function additional_privacy_deny_message($privacy) {
 	<body>
 	<h2><?php _e('Blog Access Denied', 'sitewide-privacy-options'); ?></h2>
     <?php
-	if ( $privacy == '2' ) {
-		?>
-		<p><?php _e('This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options'); ?></p>
-        <?php
-	} else if ( $privacy == '3' ) {
-		?>
-		<p><?php _e('This blog may only be viewed by administrators.', 'sitewide-privacy-options'); ?></p>
-        <?php
-	}
-	?>
+    if ( $privacy == '2' ) {
+        $msg = __( 'This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options' );
+    } elseif ( $privacy == '3' ) {
+        $msg = __( 'This blog may only be viewed by administrators.', 'sitewide-privacy-options' );
+    }
+    ?>
+    <p>
+        <?php echo apply_filters( 'additional_privacy_deny_message', $msg )?>
+    </p>
     </body>
     </html>
 	<?php
@@ -343,23 +334,40 @@ function additional_privacy_login_message() {
 }
 
 function additional_privacy_blog_options() {
-    $blog_public            = get_option('blog_public');
-	$spo_settings           = get_option('spo_settings');
-    $privacy_single_pass    = get_option( 'privacy_single_pass', 'yes' );
+    $blog_public            = get_option( 'blog_public' );
+	$spo_settings           = get_option( 'spo_settings' );
+
+    $default_available      = array(
+        'private'       => '1',
+        'network'       => '1',
+        'admin'         => '1',
+        'single_pass'   => '1'
+    );
+    $privacy_available      = get_site_option( 'privacy_available', $default_available );
+
 	?>
 
     <br />
+    <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
+
     <input id="blog-public" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e('I would like only logged in users to see my blog.', 'sitewide-privacy-options') ?></label>
     <br />
+    <?php endif ?>
+    <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
+
     <input id="blog-norobots" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e('I would like only logged in users who are registered subscribers to see my blog.</label>', 'sitewide-privacy-options'); ?></label>
     <br />
+    <?php endif ?>
+    <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
+
     <input id="blog-norobots" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e('I would like only administrators of this blog, and network to see my blog.', 'sitewide-privacy-options'); ?></label>
-
     <br />
-    <?php if ( 'yes' == $privacy_single_pass ): ?>
+    <?php endif ?>
+
+    <?php if ( isset( $privacy_available['single_pass'] ) &&  '1' == $privacy_available['single_pass'] ): ?>
 
     <script type="text/javascript">
         jQuery( document ).ready( function() {
@@ -386,11 +394,36 @@ function additional_privacy_blog_options() {
 
 function additional_privacy_site_admin_options() {
     $privacy_default        = get_site_option('privacy_default', 1);
-	$privacy_single_pass    = get_site_option('privacy_single_pass', 'yes');
 	$privacy_override       = get_site_option('privacy_override', 'yes');
+
+    $default_available      = array(
+        'private'       => '1',
+        'network'       => '1',
+        'admin'         => '1',
+        'single_pass'   => '1'
+    );
+    $privacy_available      = get_site_option( 'privacy_available', $default_available );
+
 	?>
 		<h3><?php _e('Blog Privacy Settings', 'sitewide-privacy-options') ?></h3>
 		<table class="form-table">
+            <tr valign="top">
+                <th scope="row"><?php _e( 'Available options', 'sitewide-privacy-options' ) ?></th>
+                <td>
+                    <input name="privacy_available[network]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ) ? 'checked' : ''; ?> />
+                    <?php _e( 'Only allow logged in users to see all blogs.', 'sitewide-privacy-options' ); ?>
+                    <br />
+                    <input name="privacy_available[private]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['private'] ) && '1' == $privacy_available['private'] ) ? 'checked' : ''; ?> />
+                    <?php _e( 'Only allow a registered user to see a blog for which they are registered to.', 'sitewide-privacy-options' ); ?>
+                    <br />
+                    <input name="privacy_available[admin]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['admin'] ) && '1' == $privacy_available['admin'] ) ? 'checked' : ''; ?> />
+                    <?php _e( 'Only allow administrators of a blog to view the blog for which they are an admin.', 'sitewide-privacy-options' ); ?>
+                    <br />
+                    <input name="privacy_available[single_pass]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['single_pass'] ) && '1' == $privacy_available['single_pass'] ) ? 'checked' : ''; ?> />
+                    <?php _e( 'Allow Blog Administrators to set a single password that any visitors must use to see the blog.', 'sitewide-privacy-options' ); ?>
+                    <br />
+                </td>
+            </tr>
 			<tr valign="top">
 				<th scope="row"><?php _e('Default Setting', 'sitewide-privacy-options') ?></th>
 				<td>
@@ -411,16 +444,6 @@ function additional_privacy_site_admin_options() {
                     <small><?php _e('A Site Admin can always view any blog, regardless of any privacy setting. (<em>Note:</em> "Site Admin", not an individual blog admin.)', 'sitewide-privacy-options'); ?></small></label>
 				</td>
 			</tr>
-            <tr valign="top">
-                <th scope="row"><?php _e('Allow Single Password', 'sitewide-privacy-options') ?></th>
-                <td>
-                    <input name="privacy_single_pass" id="privacy_single_pass" value="yes" <?php if ( $privacy_single_pass == 'yes' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Yes', 'sitewide-privacy-options'); ?>
-                    <br />
-                    <input name="privacy_single_pass" id="privacy_single_pass" value="no" <?php if ( $privacy_single_pass == 'no' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('No', 'sitewide-privacy-options'); ?>
-                    <br />
-                    <?php _e('Allow Blog Administrators to set a single password that any visitors must use to see the blog.', 'sitewide-privacy-options') ?>
-                </td>
-            </tr>
             <tr valign="top">
 				<th scope="row"><?php _e('Allow Override', 'sitewide-privacy-options') ?></th>
 				<td>
