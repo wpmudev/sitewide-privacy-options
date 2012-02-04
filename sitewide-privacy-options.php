@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.0.7
+Version: 1.0.8
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -336,6 +336,8 @@ function additional_privacy_login_message() {
 function additional_privacy_blog_options() {
     $blog_public            = get_option( 'blog_public' );
 	$spo_settings           = get_option( 'spo_settings' );
+    $text_network_name      = get_site_option( 'site_name', 'site' );
+    $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
 
     $default_available      = array(
         'private'       => '1',
@@ -351,19 +353,19 @@ function additional_privacy_blog_options() {
     <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
 
     <input id="blog-public" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> />
-    <label><?php _e('I would like only logged in users to see my blog.', 'sitewide-privacy-options') ?></label>
+    <label><?php printf( __( 'Visitors must have a login - anyone that is a registered user of %s can gain access.', 'sitewide-privacy-options' ), $text_network_name ) ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
 
     <input id="blog-norobots" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
-    <label><?php _e('I would like only logged in users who are registered subscribers to see my blog.</label>', 'sitewide-privacy-options'); ?></label>
+    <label><?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can gain access.', 'sitewide-privacy-options'), $text_all_user_link ); ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
 
     <input id="blog-norobots" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> />
-    <label><?php _e('I would like only administrators of this blog, and network to see my blog.', 'sitewide-privacy-options'); ?></label>
+    <label><?php _e( 'Only administrators can visit - good for testing purposes before making it live.', 'sitewide-privacy-options' ); ?></label>
     <br />
     <?php endif ?>
 
@@ -382,11 +384,11 @@ function additional_privacy_blog_options() {
 
     <br />
     <input id="blog-norobots4" type="radio" name="blog_public" value="-4" <?php if ( $blog_public == '-4' ) { echo 'checked="checked"'; } ?> />
-    <label><?php _e('I would like all users to enter the following password to see my blog.', 'sitewide-privacy-options'); ?></label>
+    <label><?php _e( 'Anyone that visits must first provide this password:', 'sitewide-privacy-options' ); ?></label>
     <br />
     <input id="blog_pass" type="text" name="blog_pass" value="<?php if ( isset( $spo_settings['blog_pass'] ) ) { echo $spo_settings['blog_pass']; } ?>" <?php if ( '-4'  != $blog_public ) { echo 'readonly'; } ?> />
     <br />
-    <span class="description"><?php _e("Note: Any one thet is a registered user of this blog won't need this password.", 'sitewide-privacy-options'); ?></span>
+    <span class="description"><?php _e( "Note: Anyone that is a registered user of this blog won't need this password.", 'sitewide-privacy-options' ); ?></span>
     <?php endif; ?>
 
     <?php

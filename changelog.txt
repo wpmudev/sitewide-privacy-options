@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 
 == Changelog ==
 
+= 1.0.8 =
+* changes of some text;
+
 = 1.0.7 =
 * Added new feature - "Single password" for access to blog;
 * Added new feature - "Available options" for Network admin;
