@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.0.9
+Version: 1.0.9.1
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -46,6 +46,10 @@ add_action('login_form', 'additional_privacy_login_message');
 
 load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
+// Signup changes
+add_action( 'signup_header', 'remove_default_privacy_signup');
+add_action( 'signup_blogform', 'new_privacy_options_on_signup' );
+
 //for single password
 add_action( 'pre_update_option_blog_public', 'save_single_password' );
 add_action( 'login_head', 'single_password_template' );
@@ -56,6 +60,108 @@ add_action( 'bp_activity_before_save', 'hide_activity' );
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
 //------------------------------------------------------------------------//
+
+function new_privacy_options_on_signup () {
+        $blog_public = get_option('blog_public');
+        $text_network_name      = get_site_option( 'site_name', 'site' );
+        $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
+
+        $default_available = array(
+            'private'       => '1',
+            'network'       => '1',
+            'admin'         => '1',
+            'single_pass'   => '1'
+        );
+        $privacy_available      = get_site_option( 'privacy_available', $default_available );
+
+    ?>
+
+    <div id="new-privacy">
+        <p class="privacy-intro">
+            <label for="blog_public"><?php _e('Privacy:') ?></label>
+
+            <label class="checkbox" for="public_on">
+                <input type="radio" id="public_on" name="new_blog_public" value="1" <?php if ( !isset( $_POST['blog_public'] ) || $_POST['blog_public'] == '1' ) { ?>checked="checked"<?php } ?> />
+                <?php _e( 'Public' ); ?>
+            </label>
+            <br />
+            <label class="checkbox" for="public_off">
+                <input type="radio" id="public_off" name="new_blog_public" value="0" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '0' ) { ?>checked="checked"<?php } ?> />
+                <?php _e( 'Search Engine Blocked','sitewide-privacy-options' ); ?>
+            </label>
+
+
+            <br />
+            <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
+            <label class="checkbox" for="blog_private_1">
+                <input id="blog_private_1" type="radio" name="new_blog_public" value="-1" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-1' ) { echo 'checked="checked"'; } ?> />
+                <?php printf( __( 'Visitors must have a login - anyone that is a registered user of %s can gain access.', 'sitewide-privacy-options' ), $text_network_name ) ?>
+            </label>
+            <br />
+            <?php endif ?>
+
+            <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
+            <label class="checkbox" for="blog_private_2">
+                <input id="blog_private_2" type="radio" name="new_blog_public" value="-2" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-2' ) { echo 'checked="checked"'; } ?> />
+                <?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can gain access.', 'sitewide-privacy-options'), $text_all_user_link ); ?>
+            </label>
+            <br />
+            <?php endif ?>
+
+            <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
+            <label class="checkbox" for="blog_private_3">
+                <input id="blog_private_3" type="radio" name="new_blog_public" value="-3" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-3' ) { echo 'checked="checked"'; } ?> />
+                <?php _e( 'Only administrators can visit - good for testing purposes before making it live.', 'sitewide-privacy-options' ); ?>
+            </label>
+            <br />
+            <?php endif ?>
+
+            <?php if ( isset( $privacy_available['single_pass'] ) &&  '1' == $privacy_available['single_pass'] ): ?>
+
+            <script type="text/javascript">
+                jQuery( document ).ready( function() {
+                    jQuery( "input[name='new_blog_public']" ).change( function() {
+                        if ( '-4' == jQuery( this ).val() )
+                            jQuery( "#blog_pass" ).attr( "readonly", false );
+                        else
+                            jQuery( "#blog_pass" ).attr( "readonly", true );
+                    });
+                });
+            </script>
+
+            <br />
+            <label class="checkbox" for="blog_private_4">
+                <input id="blog_private_4" type="radio" name="new_blog_public" value="-4" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-4' ) { echo 'checked="checked"'; } ?> />
+                <?php _e( 'Anyone that visits must first provide this password:', 'sitewide-privacy-options' ); ?>
+            </label>
+            <br />
+            <input id="blog_pass" type="text" name="blog_pass" value="<?php if ( isset( $_POST['blog_pass'] ) ) { echo $_POST['blog_pass']; } ?>" <?php if ( '-4'  != $blog_public ) { echo 'readonly'; } ?> />
+            <br />
+            <span class="description"><?php _e( "Note: Anyone that is a registered user of this blog won't need this password.", 'sitewide-privacy-options' ); ?></span>
+            <?php endif; ?>
+        </p>
+    </div>
+
+    <br />
+
+<?php
+}
+
+/**
+ * Remove default privacy options from create new blog page (signup)
+ */
+function remove_default_privacy_signup() {
+
+    $_POST['blog_public'] = $_POST['new_blog_public'];
+    ?>
+    <style type="text/css">
+        #privacy  { display: none !important; }
+        .mu_register label.checkbox { display:inline; font-weight: normal; }
+        .description { color: #666; }
+    </style>
+    <?php
+}
+
 
 /**
  * templates for single password form

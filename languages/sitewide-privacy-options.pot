@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WordPress VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-02-04 19:16+0200\n"
-"PO-Revision-Date: 2012-02-04 19:17+0200\n"
+"POT-Creation-Date: 2012-02-08 00:13+0200\n"
+"PO-Revision-Date: 2012-02-08 00:13+0200\n"
 "Last-Translator: Andrey Shipilov\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -18,138 +18,155 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SearchPath-0: c:\\sitewide-privacy-options\n"
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:97
-msgid "Or login here if you have a username"
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:81
+msgid "Privacy:"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:252
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:291
-msgid "Blog Access Denied"
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:85
+msgid "Public"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:294
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:318
-msgid "This blog may only be viewed by users who are subscribed to this blog."
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:90
+msgid "Search Engine Blocked"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:296
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:324
-msgid "This blog may only be viewed by administrators."
-msgstr ""
-
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:312
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:318
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:324
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:330
-msgid "Authorization Required"
-msgstr ""
-
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:312
-msgid "This blog may only be viewed by users who are logged in."
-msgstr ""
-
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:330
-msgid "This blog requires a password to view it."
-msgstr ""
-
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:356
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:98
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:462
 #, php-format
 msgid "Visitors must have a login - anyone that is a registered user of %s can gain access."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:362
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:106
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:468
 #, php-format
 msgid "Only registered users of this blogs can have access - anyone found under %s can gain access."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:368
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:114
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:474
 msgid "Only administrators can visit - good for testing purposes before making it live."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:387
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:135
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:493
 msgid "Anyone that visits must first provide this password:"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:391
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:140
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:497
 msgid "Note: Anyone that is a registered user of this blog won't need this password."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:410
-msgid "Blog Privacy Settings"
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:203
+msgid "Or login here if you have a username"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:413
-msgid "Available options"
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:358
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:397
+msgid "Blog Access Denied"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:416
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:438
-msgid "Only allow logged in users to see all blogs."
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:400
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:424
+msgid "This blog may only be viewed by users who are subscribed to this blog."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:419
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:440
-msgid "Only allow a registered user to see a blog for which they are registered to."
-msgstr ""
-
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:422
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:444
-msgid "Only allow administrators of a blog to view the blog for which they are an admin."
-msgstr ""
-
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:425
-msgid "Allow Blog Administrators to set a single password that any visitors must use to see the blog."
-msgstr ""
-
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:402
 #: c:\sitewide-privacy-options/sitewide-privacy-options.php:430
-msgid "Default Setting"
+msgid "This blog may only be viewed by administrators."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:432
-msgid "Allow all visitors to all blogs."
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:418
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:424
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:430
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:436
+msgid "Authorization Required"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:434
-msgid "This makes all blogs visible to everyone, including search engines (like Google, Sphere, Technorati), archivers and all public listings around your site."
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:418
+msgid "This blog may only be viewed by users who are logged in."
 msgstr ""
 
 #: c:\sitewide-privacy-options/sitewide-privacy-options.php:436
+msgid "This blog requires a password to view it."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:516
+msgid "Blog Privacy Settings"
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:519
+msgid "Available options"
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:522
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:544
+msgid "Only allow logged in users to see all blogs."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:525
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:546
+msgid "Only allow a registered user to see a blog for which they are registered to."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:528
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:550
+msgid "Only allow administrators of a blog to view the blog for which they are an admin."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:531
+msgid "Allow Blog Administrators to set a single password that any visitors must use to see the blog."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:536
+msgid "Default Setting"
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:538
+msgid "Allow all visitors to all blogs."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:540
+msgid "This makes all blogs visible to everyone, including search engines (like Google, Sphere, Technorati), archivers and all public listings around your site."
+msgstr ""
+
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:542
 msgid "Block search engines from all blogs, but allow normal visitors to see all blogs."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:442
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:548
 msgid "Even if a user is logged in, they must be a user of the individual blog in order to see it."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:446
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:552
 msgid "A Site Admin can always view any blog, regardless of any privacy setting. (<em>Note:</em> \"Site Admin\", not an individual blog admin.)"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:450
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:556
 msgid "Allow Override"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:452
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:558
 msgid "Yes"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:454
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:560
 msgid "No"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:456
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:562
 msgid "Allow Blog Administrators to modify the privacy setting for their blog(s). Note that Site Admins will always be able to edit blog privacy options."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:460
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:566
 msgid "Update All Blogs"
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:464
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:570
 msgid "Updates all blogs with the default privacy setting. The main blog is not updated. Please be patient as this can take a few minutes."
 msgstr ""
 
-#: c:\sitewide-privacy-options/sitewide-privacy-options.php:475
+#: c:\sitewide-privacy-options/sitewide-privacy-options.php:581
 msgid "Please install the latest version of <a href=\"http://premium.wpmudev.org/project/update-notifications/\" title=\"Download Now &raquo;\">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href=\"http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/\">More information &raquo;</a>"
 msgstr ""
 

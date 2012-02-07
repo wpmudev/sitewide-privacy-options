@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 
 == Changelog ==
 
+= 1.0.9.1 =
+* Display privacy options on page of new blog creation;
+
 = 1.0.9 =
 * fixed problem with Wordpress iOS App;
 
