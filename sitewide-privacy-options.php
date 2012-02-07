@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.0.8
+Version: 1.0.9
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -41,7 +41,7 @@ add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process
 add_action('blog_privacy_selector', 'additional_privacy_blog_options');
 add_action('admin_menu', 'additional_privacy_modify_menu_items', 99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
-add_action('init', 'additional_privacy');
+add_action('template_redirect', 'additional_privacy');
 add_action('login_form', 'additional_privacy_login_message');
 
 load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
