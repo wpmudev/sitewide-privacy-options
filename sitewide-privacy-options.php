@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.0.9.1
+Version: 1.1.0
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -41,7 +41,14 @@ add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process
 add_action('blog_privacy_selector', 'additional_privacy_blog_options');
 add_action('admin_menu', 'additional_privacy_modify_menu_items', 99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
-add_action('template_redirect', 'additional_privacy');
+
+
+if ( spo_is_mobile_app() ) {
+    add_action('template_redirect', 'additional_privacy');
+} else {
+    add_action('init', 'additional_privacy');
+}
+
 add_action('login_form', 'additional_privacy_login_message');
 
 load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
@@ -60,6 +67,38 @@ add_action( 'bp_activity_before_save', 'hide_activity' );
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
 //------------------------------------------------------------------------//
+
+
+/**
+ * check that it is mobile app
+ */
+function spo_is_mobile_app() {
+
+    //WordPress for iOS
+    if ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wp-iphone' ) !== false ) {
+        return true;
+    }
+    //WordPress for Android
+    elseif ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wp-android' ) !== false ) {
+        return true;
+    }
+    //WordPress for Windows Phone 7
+    elseif ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wp-windowsphone' ) !== false ) {
+        return true;
+    }
+    //WordPress for Nokia
+    elseif ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wp-nokia' ) !== false ) {
+        return true;
+    }
+    //WordPress for Blackberry
+    elseif ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wp-blackberry' ) !== false ) {
+        return true;
+    }
+
+    //not mobile app
+    return false;
+}
+
 
 function new_privacy_options_on_signup () {
         $blog_public = get_option('blog_public');
@@ -103,7 +142,7 @@ function new_privacy_options_on_signup () {
             <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
             <label class="checkbox" for="blog_private_2">
                 <input id="blog_private_2" type="radio" name="new_blog_public" value="-2" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-2' ) { echo 'checked="checked"'; } ?> />
-                <?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can gain access.', 'sitewide-privacy-options'), $text_all_user_link ); ?>
+                <?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can have access.', 'sitewide-privacy-options'), $text_all_user_link ); ?>
             </label>
             <br />
             <?php endif ?>
@@ -258,6 +297,11 @@ function hide_activity( $activity ) {
 }
 
 function additional_privacy() {
+
+    if ( !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
+        wp_print_scripts( 'jquery' );
+    }
+
 	$privacy = get_option('blog_public');
 	if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], 'wp-signup') && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
 
@@ -465,7 +509,7 @@ function additional_privacy_blog_options() {
     <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
 
     <input id="blog-norobots" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
-    <label><?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can gain access.', 'sitewide-privacy-options'), $text_all_user_link ); ?></label>
+    <label><?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can have access.', 'sitewide-privacy-options'), $text_all_user_link ); ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
