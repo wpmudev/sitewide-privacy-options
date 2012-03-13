@@ -1,5 +1,5 @@
 === Additional Privacy ===
-Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub)
+Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 
 == Changelog ==
 
