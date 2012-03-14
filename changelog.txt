@@ -3,6 +3,10 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.2 =
+* Major improvements
+* Fixed: Header already output errors
+
 = 1.1.1 =
 * Fixed: Many issues if user gets the password wrong on a password protected blog
 

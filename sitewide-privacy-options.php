@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.1
+Version: 1.1.2
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -42,16 +42,13 @@ add_action('blog_privacy_selector', 'additional_privacy_blog_options');
 add_action('admin_menu', 'additional_privacy_modify_menu_items', 99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
 
-
 if ( spo_is_mobile_app() ) {
     add_action('template_redirect', 'additional_privacy');
 } else {
     add_action('init', 'additional_privacy');
 }
 
-add_action('login_form', 'additional_privacy_login_message');
-
-load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+add_action('init', 'additional_privacy_init');
 
 // Signup changes
 add_action( 'signup_header', 'remove_default_privacy_signup');
@@ -60,6 +57,7 @@ add_action( 'signup_blogform', 'new_privacy_options_on_signup' );
 //for single password
 add_action( 'pre_update_option_blog_public', 'save_single_password' );
 add_action( 'login_head', 'single_password_template' );
+add_action( 'login_head', 'additional_privacy_login_message' );
 
 //checking buddypress activity stream
 add_action( 'bp_activity_before_save', 'hide_activity' );
@@ -68,6 +66,9 @@ add_action( 'bp_activity_before_save', 'hide_activity' );
 //---Functions------------------------------------------------------------//
 //------------------------------------------------------------------------//
 
+function additional_privacy_init() {
+    load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
 
 /**
  * check that it is mobile app
@@ -201,46 +202,77 @@ function remove_default_privacy_signup() {
     <?php
 }
 
+if ( get_option('blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] && !function_exists('wp_authenticate')) {
+    
+    function wp_authenticate($username, $password) {
+        $username = sanitize_user($username);
+        $password = trim($password);
+        
+        if ( isset( $_REQUEST['redirect_to'] ) )
+            $redirect_to = $_REQUEST['redirect_to'];
+        else
+            $redirect_to = home_url();
+        
+        if ( isset( $_POST['pwd'] ) ) {
+            $spo_settings = get_option( 'spo_settings' );
+            if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
+                $value = md5( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
+                setcookie( 'spo_blog_access', $value, time() + 1800 );
+                wp_safe_redirect( $redirect_to );
+            } else {
+                $errors = new WP_Error();
+                $errors->add('incorrect_password', __('<strong>ERROR</strong>: Incorrect Password', 'sitewide-privacy-options'));
+                return $errors;
+            }
+        }
+        $user = null;
+        if ( $user == null ) {
+            // TODO what should the error message be? (Or would these even happen?)
+            // Only needed if all authentication handlers fail to return anything.
+            $user = new WP_Error('authorization_required', __('<strong>Authorization Required</strong>: This blog requires a password to view it.', 'sitewide-privacy-options'));
+        }
+        $ignore_codes = array('empty_username', 'empty_password');
+        if (is_wp_error($user) && !in_array($user->get_error_code(), $ignore_codes) ) {
+            do_action('wp_login_failed', $username);
+        }
+        return $user;
+    }
+}
+
+function additional_privacy_login_message() {
+    global $errors;
+    if ( get_option('blog_public') == '-1' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '1' ) {
+        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are logged in.', 'sitewide-privacy-options'));
+    } else if ( get_option('blog_public') == '-2' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '2' ) {
+	$errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options'));
+    } else if ( get_option('blog_public') == '-3' && isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '3' ) {
+        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by administrators.', 'sitewide-privacy-options'));
+    }
+}
 
 /**
  * templates for single password form
  */
 function single_password_template( $page ) {
-
-    if ( isset( $_POST['pwd'] ) ) {
-
-        $spo_settings = get_option( 'spo_settings' );
-
+    global $errors, $reauth;
+    
+    if ( get_option('blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         if ( isset( $_REQUEST['redirect_to'] ) )
-            $redirect_to = $_REQUEST['redirect_to'];
+            $redirect_to = 'redirect_to='.$_REQUEST['redirect_to'];
         else
-            $redirect_to = home_url();
-
-
-        if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
-            $value = md5( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
-            setcookie( 'spo_blog_access', $value, time() + 1800 );
-            
-            wp_safe_redirect( $redirect_to );
-            exit();
-        }
-    }
-
-    if ( isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
-
+            $redirect_to = ''
         ?>
-
         <script type="text/javascript">
             jQuery( document ).ready( function() {
+                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4&'.$redirect_to); ?>' );
                 jQuery( '#loginform' ).attr( 'id', 'loginform4' );
                 jQuery( '#loginform' ).attr( 'name', 'loginform4' );
-                jQuery( '#user_pass' ).attr( 'id', 'blog_pass' );
+                jQuery( '#user_pass' ).attr( 'id', 'blog_pass');
                 jQuery( '#user_login' ).parent( 'label' ).parent( 'p' ).remove();
                 jQuery( '#rememberme' ).parent( 'label' ).parent( 'p' ).remove();
                 jQuery( '#backtoblog' ).remove();
                 jQuery( '#nav' ).remove();
-                jQuery( '#loginform4' ).append('<br /><br /><br /><p><a href="<?php echo $_SERVER['SCRIPT_URI']; ?>"><?php _e('Or login here if you have a username', 'sitewide-privacy-options'); ?></a></p>');
-
+                jQuery( '#loginform4' ).append('<br /><br /><br /><p><a href="<?php echo site_url('wp-login.php?'.$redirect_to); ?>"><?php _e('Or login here if you have a username', 'sitewide-privacy-options'); ?></a></p>');
                 jQuery( '#loginform4' ).submit( function() {
                     if ( '' == jQuery( '#blog_pass' ).val() ) {
                         jQuery( '#blog_pass' ).css( 'border-color', 'red' );
@@ -297,25 +329,24 @@ function hide_activity( $activity ) {
 }
 
 function additional_privacy() {
-
-    if ( !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
-        wp_print_scripts( 'jquery' );
+    if ( get_option('blog_public') == '-4' && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
+        wp_enqueue_script( 'jquery' );
     }
+    
+    $privacy = get_option('blog_public');
+    if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], 'wp-signup') && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
 
-	$privacy = get_option('blog_public');
-	if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], 'wp-signup') && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
-
-        switch( $privacy ) {
+    switch( $privacy ) {
             case '-1': {
                 if ( ! is_user_logged_in() ) {
-                    wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=1&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                    wp_redirect( site_url("wp-login.php?privacy=1&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
                     exit();
                 }
                 break;
             }
             case '-2': {
                 if ( ! is_user_logged_in() ) {
-                    wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=2&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                    wp_redirect( site_url("wp-login.php?privacy=2&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
                     exit();
                 } else {
                     if ( ! current_user_can( 'read' ) ) {
@@ -326,7 +357,7 @@ function additional_privacy() {
             }
             case '-3': {
                 if ( ! is_user_logged_in() ) {
-                    wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=3&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                    wp_redirect( site_url("wp-login.php?privacy=3&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
                     exit();
                 } else {
                     if ( ! current_user_can( 'manage_options' ) ) {
@@ -342,7 +373,7 @@ function additional_privacy() {
 
                 if ( !is_user_logged_in() ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
-                        wp_redirect( get_option( 'home' ) . "/wp-login.php?privacy=4&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] ) );
+                        wp_redirect( site_url("wp-login.php?privacy=4&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
                         exit();
                     }
                     setcookie( 'spo_blog_access', $value, time() + 1800 );
@@ -455,34 +486,6 @@ function additional_privacy_deny_message( $privacy ) {
 	exit();
 }
 
-function additional_privacy_login_message() {
-	if ( isset( $_GET['privacy'] ) && $_GET['privacy'] == '1' ) {
-		?>
-        <div id="login_error">
-        <strong><?php _e('Authorization Required', 'sitewide-privacy-options'); ?></strong>: <?php _e('This blog may only be viewed by users who are logged in.', 'sitewide-privacy-options'); ?><br />
-        </div>
-        <?php
-	} else if ( isset( $_GET['privacy'] ) && $_GET['privacy'] == '2' ) {
-		?>
-        <div id="login_error">
-        <strong><?php _e('Authorization Required', 'sitewide-privacy-options'); ?></strong>: <?php _e('This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options'); ?><br />
-        </div>
-        <?php
-	} else if ( isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '3' ) {
-        ?>
-        <div id="login_error">
-        <strong><?php _e('Authorization Required', 'sitewide-privacy-options'); ?></strong>: <?php _e('This blog may only be viewed by administrators.', 'sitewide-privacy-options'); ?><br />
-        </div>
-        <?php
-    } else if ( isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '4' ) {
-		?>
-        <div id="login_error">
-        <strong><?php _e('Authorization Required', 'sitewide-privacy-options'); ?></strong>: <?php _e('This blog requires a password to view it.', 'sitewide-privacy-options'); ?><br />
-        </div>
-        <?php
-	}
-}
-
 function additional_privacy_blog_options() {
     $blog_public            = get_option( 'blog_public' );
 	$spo_settings           = get_option( 'spo_settings' );
@@ -502,19 +505,19 @@ function additional_privacy_blog_options() {
     <br />
     <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
 
-    <input id="blog-public" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-reguser" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> />
     <label><?php printf( __( 'Visitors must have a login - anyone that is a registered user of %s can gain access.', 'sitewide-privacy-options' ), $text_network_name ) ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
 
-    <input id="blog-norobots" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-bloguser" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
     <label><?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can have access.', 'sitewide-privacy-options'), $text_all_user_link ); ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
 
-    <input id="blog-norobots" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-admin" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e( 'Only administrators can visit - good for testing purposes before making it live.', 'sitewide-privacy-options' ); ?></label>
     <br />
     <?php endif ?>
@@ -533,7 +536,7 @@ function additional_privacy_blog_options() {
     </script>
 
     <br />
-    <input id="blog-norobots4" type="radio" name="blog_public" value="-4" <?php if ( $blog_public == '-4' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-pass" type="radio" name="blog_public" value="-4" <?php if ( $blog_public == '-4' ) { echo 'checked="checked"'; } ?> />
     <label><?php _e( 'Anyone that visits must first provide this password:', 'sitewide-privacy-options' ); ?></label>
     <br />
     <input id="blog_pass" type="text" name="blog_pass" value="<?php if ( isset( $spo_settings['blog_pass'] ) ) { echo $spo_settings['blog_pass']; } ?>" <?php if ( '-4'  != $blog_public ) { echo 'readonly'; } ?> />
