@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.2
+Version: 1.1.3
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -41,6 +41,8 @@ add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process
 add_action('blog_privacy_selector', 'additional_privacy_blog_options');
 add_action('admin_menu', 'additional_privacy_modify_menu_items', 99);
 add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
+add_action('admin_enqueue_scripts', 'additional_privacy_admin_enqueue_scripts');
+add_action('admin_init', 'additional_privacy_admin_init');
 
 if ( spo_is_mobile_app() ) {
     add_action('template_redirect', 'additional_privacy');
@@ -68,6 +70,16 @@ add_action( 'bp_activity_before_save', 'hide_activity' );
 
 function additional_privacy_init() {
     load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+
+function additional_privacy_admin_init() {
+    wp_register_script('additional_privacy_admin_js', plugins_url('js/admin.js', __FILE__), array('jquery'));
+}
+
+function additional_privacy_admin_enqueue_scripts($hook) {
+    if (is_multisite() && $hook == 'settings.php') {
+        wp_enqueue_script('additional_privacy_admin_js');
+    }
 }
 
 /**
@@ -101,25 +113,29 @@ function spo_is_mobile_app() {
 }
 
 
-function new_privacy_options_on_signup () {
-        $blog_public = get_option('blog_public');
-        $text_network_name      = get_site_option( 'site_name', 'site' );
-        $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
+function new_privacy_options_on_signup() {
+    $blog_public = get_option('blog_public');
+    $text_network_name      = get_site_option( 'site_name' );
+    if (!$text_network_name) {
+        $text_network_name = 'site';
+    }
+    $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
 
-        $default_available = array(
-            'private'       => '1',
-            'network'       => '1',
-            'admin'         => '1',
-            'single_pass'   => '1'
-        );
-        $privacy_available      = get_site_option( 'privacy_available', $default_available );
-
+    $default_available = array(
+        'private'       => '1',
+        'network'       => '1',
+        'admin'         => '1',
+        'single_pass'   => '1'
+    );
+    $privacy_available      = get_site_option( 'privacy_available');
+    if (!$privacy_available) {
+        $privacy_available = $default_available;
+    }
+    if (get_site_option('sitewide_privacy_signup_options') != 'disabled') {
     ?>
-
     <div id="new-privacy">
         <p class="privacy-intro">
             <label for="blog_public"><?php _e('Privacy:') ?></label>
-
             <label class="checkbox" for="public_on">
                 <input type="radio" id="public_on" name="new_blog_public" value="1" <?php if ( !isset( $_POST['blog_public'] ) || $_POST['blog_public'] == '1' ) { ?>checked="checked"<?php } ?> />
                 <?php _e( 'Public' ); ?>
@@ -129,8 +145,6 @@ function new_privacy_options_on_signup () {
                 <input type="radio" id="public_off" name="new_blog_public" value="0" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '0' ) { ?>checked="checked"<?php } ?> />
                 <?php _e( 'Search Engine Blocked','sitewide-privacy-options' ); ?>
             </label>
-
-
             <br />
             <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
             <label class="checkbox" for="blog_private_1">
@@ -139,7 +153,6 @@ function new_privacy_options_on_signup () {
             </label>
             <br />
             <?php endif ?>
-
             <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
             <label class="checkbox" for="blog_private_2">
                 <input id="blog_private_2" type="radio" name="new_blog_public" value="-2" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-2' ) { echo 'checked="checked"'; } ?> />
@@ -147,7 +160,6 @@ function new_privacy_options_on_signup () {
             </label>
             <br />
             <?php endif ?>
-
             <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
             <label class="checkbox" for="blog_private_3">
                 <input id="blog_private_3" type="radio" name="new_blog_public" value="-3" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-3' ) { echo 'checked="checked"'; } ?> />
@@ -155,9 +167,7 @@ function new_privacy_options_on_signup () {
             </label>
             <br />
             <?php endif ?>
-
             <?php if ( isset( $privacy_available['single_pass'] ) &&  '1' == $privacy_available['single_pass'] ): ?>
-
             <script type="text/javascript">
                 jQuery( document ).ready( function() {
                     jQuery( "input[name='new_blog_public']" ).change( function() {
@@ -168,7 +178,6 @@ function new_privacy_options_on_signup () {
                     });
                 });
             </script>
-
             <br />
             <label class="checkbox" for="blog_private_4">
                 <input id="blog_private_4" type="radio" name="new_blog_public" value="-4" <?php if ( isset( $_POST['blog_public'] ) && $_POST['blog_public'] == '-4' ) { echo 'checked="checked"'; } ?> />
@@ -181,18 +190,20 @@ function new_privacy_options_on_signup () {
             <?php endif; ?>
         </p>
     </div>
-
     <br />
-
 <?php
+    }
 }
 
 /**
  * Remove default privacy options from create new blog page (signup)
  */
 function remove_default_privacy_signup() {
-
-    $_POST['blog_public'] = $_POST['new_blog_public'];
+    if (isset($_POST['new_blog_public'])) {
+        $_POST['blog_public'] = $_POST['new_blog_public'];
+    } else {
+        $_POST['blog_public'] = '';
+    }
     ?>
     <style type="text/css">
         #privacy  { display: none !important; }
@@ -386,33 +397,38 @@ function additional_privacy() {
 
 function additional_privacy_set_default($blog_id, $user_id) {
 	global $wpdb;
-	$privacy_default = get_site_option('privacy_default', 1);
+	$privacy_default = get_site_option('privacy_default');
+        if (!$privacy_default) {
+            $privacy_default = 1;
+        }
 	update_blog_option($blog_id, "blog_public", $privacy_default);
 	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $privacy_default ."' WHERE blog_id = '". $blog_id ."' LIMIT 1");
 }
 
 function additional_privacy_site_admin_options_process() {
-	global $wpdb;
+    global $wpdb;
+    
+    update_site_option( 'sitewide_privacy_signup_options', $_POST['sitewide_privacy_signup_options'] );
     update_site_option( 'privacy_default' , $_POST['privacy_default'] );
-	update_site_option( 'privacy_override' , $_POST['privacy_override'] );
+    update_site_option( 'privacy_override' , $_POST['privacy_override'] );
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
 
-	if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
-		$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1'");
-		$query = "SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1'";
-		$blogs = $wpdb->get_results( $query, ARRAY_A );
-		if ( count( $blogs ) > 0 ) {
-			foreach ( $blogs as $blog ){;
+    if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
+	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1'");
+	$query = "SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1'";
+        $blogs = $wpdb->get_results( $query, ARRAY_A );
+	if ( count( $blogs ) > 0 ) {
+	    foreach ( $blogs as $blog ){
                 update_blog_option($blog['blog_id'], "blog_public", $_POST['privacy_default']);
-			}
-		}
+	    }
 	}
+    }
 }
 
 function additional_privacy_modify_menu_items() {
 	global $submenu, $menu, $wpdb;
-	if ( get_site_option('privacy_override', 'yes') == 'no' && !is_super_admin() && $wpdb->blogid != 1 ) {
-			unset( $submenu['options-general.php'][35] );
+	if ( get_site_option('privacy_override') != 'yes' && !is_super_admin() && $wpdb->blogid != 1 ) {
+	    unset( $submenu['options-general.php'][35] );
 	}
 }
 
@@ -488,8 +504,11 @@ function additional_privacy_deny_message( $privacy ) {
 
 function additional_privacy_blog_options() {
     $blog_public            = get_option( 'blog_public' );
-	$spo_settings           = get_option( 'spo_settings' );
-    $text_network_name      = get_site_option( 'site_name', 'site' );
+    $spo_settings           = get_option( 'spo_settings' );
+    $text_network_name      = get_site_option( 'site_name' );
+    if (!$text_network_name) {
+        $text_network_name = 'site';
+    }
     $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
 
     $default_available      = array(
@@ -498,10 +517,11 @@ function additional_privacy_blog_options() {
         'admin'         => '1',
         'single_pass'   => '1'
     );
-    $privacy_available      = get_site_option( 'privacy_available', $default_available );
-
-	?>
-
+    $privacy_available      = get_site_option( 'privacy_available' );
+    if (!$privacy_available) {
+        $privacy_available = $default_available;
+    }
+    ?>
     <br />
     <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
 
@@ -548,8 +568,14 @@ function additional_privacy_blog_options() {
 }
 
 function additional_privacy_site_admin_options() {
-    $privacy_default        = get_site_option('privacy_default', 1);
-	$privacy_override       = get_site_option('privacy_override', 'yes');
+    $privacy_default        = get_site_option('privacy_default');
+    if (!$privacy_default) {
+        $privacy_default = 1;
+    }
+    $privacy_override       = get_site_option('privacy_override');
+    if (!$privacy_override) {
+        $privacy_override = 'yes';
+    }
 
     $default_available      = array(
         'private'       => '1',
@@ -557,68 +583,83 @@ function additional_privacy_site_admin_options() {
         'admin'         => '1',
         'single_pass'   => '1'
     );
-    $privacy_available      = get_site_option( 'privacy_available', $default_available );
-
-	?>
-		<h3><?php _e('Blog Privacy Settings', 'sitewide-privacy-options') ?></h3>
-		<table class="form-table">
-            <tr valign="top">
-                <th scope="row"><?php _e( 'Available options', 'sitewide-privacy-options' ) ?></th>
-                <td>
-                    <input name="privacy_available[network]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ) ? 'checked' : ''; ?> />
-                    <?php _e( 'Only allow logged in users to see all blogs.', 'sitewide-privacy-options' ); ?>
-                    <br />
-                    <input name="privacy_available[private]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['private'] ) && '1' == $privacy_available['private'] ) ? 'checked' : ''; ?> />
-                    <?php _e( 'Only allow a registered user to see a blog for which they are registered to.', 'sitewide-privacy-options' ); ?>
-                    <br />
-                    <input name="privacy_available[admin]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['admin'] ) && '1' == $privacy_available['admin'] ) ? 'checked' : ''; ?> />
-                    <?php _e( 'Only allow administrators of a blog to view the blog for which they are an admin.', 'sitewide-privacy-options' ); ?>
-                    <br />
-                    <input name="privacy_available[single_pass]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['single_pass'] ) && '1' == $privacy_available['single_pass'] ) ? 'checked' : ''; ?> />
-                    <?php _e( 'Allow Blog Administrators to set a single password that any visitors must use to see the blog.', 'sitewide-privacy-options' ); ?>
-                    <br />
-                </td>
-            </tr>
-			<tr valign="top">
-				<th scope="row"><?php _e('Default Setting', 'sitewide-privacy-options') ?></th>
-				<td>
-					<label><input name="privacy_default" id="privacy_default" value="1" <?php if ( $privacy_default == '1' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Allow all visitors to all blogs.', 'sitewide-privacy-options'); ?>
-                    <br />
-                    <small><?php _e('This makes all blogs visible to everyone, including search engines (like Google, Sphere, Technorati), archivers and all public listings around your site.', 'sitewide-privacy-options'); ?></small></label>
-                    <br />
-					<label><input name="privacy_default" id="privacy_default" value="0" <?php if ( $privacy_default == '0' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Block search engines from all blogs, but allow normal visitors to see all blogs.', 'sitewide-privacy-options'); ?></label>
-                    <br />
-					<label><input name="privacy_default" id="privacy_default" value="-1" <?php if ( $privacy_default == '-1' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow logged in users to see all blogs.', 'sitewide-privacy-options'); ?></label>
-                    <br />
-					<label><input name="privacy_default" id="privacy_default" value="-2" <?php if ( $privacy_default == '-2' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow a registered user to see a blog for which they are registered to.', 'sitewide-privacy-options'); ?>
-                    <br />
-                    <small><?php _e('Even if a user is logged in, they must be a user of the individual blog in order to see it.', 'sitewide-privacy-options'); ?></small></label>
-                    <br />
-					<label><input name="privacy_default" id="privacy_default" value="-3" <?php if ( $privacy_default == '-3' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow administrators of a blog to view the blog for which they are an admin.', 'sitewide-privacy-options'); ?>
-                    <br />
-                    <small><?php _e('A Site Admin can always view any blog, regardless of any privacy setting. (<em>Note:</em> "Site Admin", not an individual blog admin.)', 'sitewide-privacy-options'); ?></small></label>
-				</td>
-			</tr>
-            <tr valign="top">
-				<th scope="row"><?php _e('Allow Override', 'sitewide-privacy-options') ?></th>
-				<td>
-					<input name="privacy_override" id="privacy_override" value="yes" <?php if ( $privacy_override == 'yes' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Yes', 'sitewide-privacy-options'); ?>
-					<br />
-					<input name="privacy_override" id="privacy_override" value="no" <?php if ( $privacy_override == 'no' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('No', 'sitewide-privacy-options'); ?>
-					<br />
-					<?php _e('Allow Blog Administrators to modify the privacy setting for their blog(s). Note that Site Admins will always be able to edit blog privacy options.', 'sitewide-privacy-options') ?>
-				</td>
-			</tr>
-			<tr valign="top">
-				<th scope="row"><?php _e('Update All Blogs', 'sitewide-privacy-options') ?></th>
-				<td>
-	                <input id="privacy_update_all_blogs" name="privacy_update_all_blogs" value="update" type="checkbox">
-					<br />
-					<?php _e('Updates all blogs with the default privacy setting. The main blog is not updated. Please be patient as this can take a few minutes.', 'sitewide-privacy-options') ?>
-				</td>
-			</tr>
-		</table>
-	<?php
+    $privacy_available      = get_site_option( 'privacy_available' );
+    if (!$privacy_available) {
+        $privacy_available = $default_available;
+    }
+    $sitewide_privacy_signup_options = get_site_option( 'sitewide_privacy_signup_options');
+    if (!$sitewide_privacy_signup_options) {
+        $sitewide_privacy_signup_options = 'enabled';
+    }
+    ?>
+    <h3><?php _e('Blog Privacy Settings', 'sitewide-privacy-options') ?></h3>
+    <table class="form-table">
+        <tr valign="top">
+            <th scope="row"><?php _e( 'Show Privacy Options at Sign Up', 'sitewide-privacy-options' ) ?></th>
+            <td>
+                <label><input name="sitewide_privacy_signup_options" id="sitewide_privacy_signup_options_yes" type="radio" value="enabled" <?php echo ( 'enabled' == $sitewide_privacy_signup_options ) ? 'checked' : ''; ?> />
+                <?php _e( 'Yes', 'sitewide-privacy-options' ); ?></label>
+                <label><input name="sitewide_privacy_signup_options" id="sitewide_privacy_signup_options_no" type="radio" value="disabled" <?php echo ( 'disabled' == $sitewide_privacy_signup_options ) ? 'checked' : ''; ?> />
+                <?php _e( 'No', 'sitewide-privacy-options' ); ?></label>
+            </td>
+        </tr>
+        <tr valign="top">
+            <th scope="row"><?php _e( 'Available Options', 'sitewide-privacy-options' ) ?></th>
+            <td>
+                <input name="privacy_available[network]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ) ? 'checked' : ''; ?> />
+                <?php _e( 'Only allow logged in users to see all blogs.', 'sitewide-privacy-options' ); ?>
+                <br />
+                <input name="privacy_available[private]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['private'] ) && '1' == $privacy_available['private'] ) ? 'checked' : ''; ?> />
+                <?php _e( 'Only allow a registered user to see a blog for which they are registered to.', 'sitewide-privacy-options' ); ?>
+                <br />
+                <input name="privacy_available[admin]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['admin'] ) && '1' == $privacy_available['admin'] ) ? 'checked' : ''; ?> />
+                <?php _e( 'Only allow administrators of a blog to view the blog for which they are an admin.', 'sitewide-privacy-options' ); ?>
+                <br />
+                <input name="privacy_available[single_pass]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['single_pass'] ) && '1' == $privacy_available['single_pass'] ) ? 'checked' : ''; ?> />
+                <?php _e( 'Allow Blog Administrators to set a single password that any visitors must use to see the blog.', 'sitewide-privacy-options' ); ?>
+                <br />
+            </td>
+        </tr>
+	<tr valign="top">
+	    <th scope="row"><?php _e('Default Setting', 'sitewide-privacy-options') ?></th>
+	    <td>
+                <label><input name="privacy_default" id="privacy_default" value="1" <?php if ( $privacy_default == '1' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Allow all visitors to all blogs.', 'sitewide-privacy-options'); ?>
+                <br />
+                <small><?php _e('This makes all blogs visible to everyone, including search engines (like Google, Sphere, Technorati), archivers and all public listings around your site.', 'sitewide-privacy-options'); ?></small></label>
+                <br />
+                <label><input name="privacy_default" id="privacy_default" value="0" <?php if ( $privacy_default == '0' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Block search engines from all blogs, but allow normal visitors to see all blogs.', 'sitewide-privacy-options'); ?></label>
+                <br />
+	        <label><input name="privacy_default" id="privacy_default" value="-1" <?php if ( $privacy_default == '-1' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow logged in users to see all blogs.', 'sitewide-privacy-options'); ?></label>
+                <br />
+		<label><input name="privacy_default" id="privacy_default" value="-2" <?php if ( $privacy_default == '-2' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow a registered user to see a blog for which they are registered to.', 'sitewide-privacy-options'); ?>
+                <br />
+                <small><?php _e('Even if a user is logged in, they must be a user of the individual blog in order to see it.', 'sitewide-privacy-options'); ?></small></label>
+                <br />
+		<label><input name="privacy_default" id="privacy_default" value="-3" <?php if ( $privacy_default == '-3' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow administrators of a blog to view the blog for which they are an admin.', 'sitewide-privacy-options'); ?>
+                <br />
+                <small><?php _e('A Site Admin can always view any blog, regardless of any privacy setting. (<em>Note:</em> "Site Admin", not an individual blog admin.)', 'sitewide-privacy-options'); ?></small></label>
+            </td>
+	</tr>
+        <tr valign="top">
+	    <th scope="row"><?php _e('Allow Override', 'sitewide-privacy-options') ?></th>
+	    <td>
+	        <input name="privacy_override" id="privacy_override" value="yes" <?php if ( $privacy_override == 'yes' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Yes', 'sitewide-privacy-options'); ?>
+	        <br />
+	        <input name="privacy_override" id="privacy_override" value="no" <?php if ( $privacy_override == 'no' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('No', 'sitewide-privacy-options'); ?>
+	        <br />
+	        <?php _e('Allow Blog Administrators to modify the privacy setting for their blog(s). Note that Site Admins will always be able to edit blog privacy options.', 'sitewide-privacy-options') ?>
+	    </td>
+	</tr>
+	<tr valign="top">
+	    <th scope="row"><?php _e('Update All Blogs', 'sitewide-privacy-options') ?></th>
+	    <td>
+                <input id="privacy_update_all_blogs" name="privacy_update_all_blogs" value="update" type="checkbox">
+	        <br />
+		<?php _e('Updates all blogs with the default privacy setting. The main blog is not updated. Please be patient as this can take a few minutes.', 'sitewide-privacy-options') ?>
+	    </td>
+	</tr>
+    </table>
+    <?php
 }
 
 /* Update Notifications Notice */
