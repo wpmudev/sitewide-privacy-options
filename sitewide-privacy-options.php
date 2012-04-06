@@ -265,9 +265,9 @@ function additional_privacy_login_message() {
  * templates for single password form
  */
 function single_password_template( $page ) {
-    global $errors, $reauth;
+    global $errors, $reauth, $blog_id;
     
-    if ( get_option('blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
+    if ( get_blog_option($blog_id, 'blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         if ( isset( $_REQUEST['redirect_to'] ) )
             $redirect_to = 'redirect_to='.$_REQUEST['redirect_to'];
         else
