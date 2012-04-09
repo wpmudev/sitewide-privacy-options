@@ -339,6 +339,49 @@ function hide_activity( $activity ) {
     return $activity;
 }
 
+function additional_privacy_can_access_blog($blog_id) {
+    
+    $privacy = get_option_blog_id($blog_id, 'blog_public');
+    
+    switch( $privacy ) {
+            case '-1': 
+                if ( ! is_user_logged_in() ) {
+                    return false;
+                }
+                break;
+            case '-2': 
+                if ( ! is_user_logged_in() ) {
+                    return false;
+                } else {
+                    if ( ! current_user_can( 'read' ) ) {
+                        additional_privacy_deny_message( '2' );
+                    }
+                }
+                break;
+            case '-3':
+                if ( ! is_user_logged_in() ) {
+                    return false;
+                } else {
+                    if ( ! current_user_can( 'manage_options' ) ) {
+                        additional_privacy_deny_message( '3' );
+                    }
+                }
+                break;
+            //single password
+            case '-4':
+                $spo_settings = get_option( 'spo_settings' );
+                $value        = md5( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
+                if ( !is_user_logged_in() ) {
+                    if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
+                        return false;
+                    }
+                    setcookie( 'spo_blog_access', $value, time() + 1800 );
+                }
+                break;
+    }
+    return true;
+}
+
 function additional_privacy() {
     if ( get_option('blog_public') == '-4' && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         wp_enqueue_script( 'jquery' );
