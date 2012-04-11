@@ -74,6 +74,41 @@ function additional_privacy_init() {
 
 function additional_privacy_admin_init() {
     wp_register_script('additional_privacy_admin_js', plugins_url('js/admin.js', __FILE__), array('jquery'));
+    
+    if ( get_site_option('privacy_update_all_blogs', 2) == 1 )  {
+        global $wpdb;
+        $blog_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) as count FROM $wpdb->blogs WHERE blog_id != '1' AND deleted = 0 AND spam = 0;"));
+        if ($blog_count > 0) {
+            $blogs_completed = isset($_REQUEST['offset'])?intval($_REQUEST['offset']):0;
+            $blog_limit = 100;
+            $blogs = $wpdb->get_results( $wpdb->prepare("SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ORDER BY blog_id LIMIT %d, %d;", $blogs_completed, $blog_limit), ARRAY_A );
+            if ( count( $blogs ) > 0 ) {
+                ?>
+                <h2><?php _e('Applying to blogs, please wait...', CLASSES_TRANSLATION_DOMAIN); ?></h2>
+                <?php
+                echo sprintf(__('%d of %d blogs updated', CLASSES_TRANSLATION_DOMAIN), $blogs_completed, $blog_count);
+                foreach ( $blogs as $blog ) {
+                    $blogs_completed++;
+                    update_blog_option($blog['blog_id'], "blog_public", get_site_option('privacy_default')) ;
+                }
+                ?>
+                <script type="text/javascript">
+                        window.location ='<?php
+                        if ($blog_count > $blogs_completed) {
+                            echo network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1));
+                        } else {
+                            echo network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed);
+                            update_site_option('privacy_update_all_blogs', 2);
+                        }
+                    ?>';
+                </script>
+                <?php
+                exit();
+            }
+        } else {
+            update_site_option('privacy_update_all_blogs', 2);
+        }
+    }  
 }
 
 function additional_privacy_admin_enqueue_scripts($hook) {
@@ -452,19 +487,18 @@ function additional_privacy_site_admin_options_process() {
     global $wpdb;
     
     update_site_option( 'sitewide_privacy_signup_options', $_POST['sitewide_privacy_signup_options'] );
-    update_site_option( 'privacy_default' , $_POST['privacy_default'] );
+    if (empty($_POST['privacy_default'])) {
+        update_site_option( 'privacy_default' , "0{$_POST['privacy_default']}" );
+    } else {
+        update_site_option( 'privacy_default' , $_POST['privacy_default'] );
+    }
     update_site_option( 'privacy_override' , $_POST['privacy_override'] );
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
-
+    
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
-	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1'");
-	$query = "SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1'";
-        $blogs = $wpdb->get_results( $query, ARRAY_A );
-	if ( count( $blogs ) > 0 ) {
-	    foreach ( $blogs as $blog ){
-                update_blog_option($blog['blog_id'], "blog_public", $_POST['privacy_default']);
-	    }
-	}
+	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1' AND active = 1 AND deleted = 0 AND spam = 0 ");
+        
+        update_site_option( 'privacy_update_all_blogs' , 1 );
     }
 }
 
@@ -546,6 +580,10 @@ function additional_privacy_deny_message( $privacy ) {
 }
 
 function additional_privacy_blog_options() {
+    if (function_exists('is_pro_site') && (!(is_pro_site() || !psts_show_ads()))) {
+        return;
+    }
+    
     $blog_public            = get_option( 'blog_public' );
     $spo_settings           = get_option( 'spo_settings' );
     $text_network_name      = get_site_option( 'site_name' );
