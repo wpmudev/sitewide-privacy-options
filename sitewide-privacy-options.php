@@ -64,6 +64,8 @@ add_action( 'login_head', 'additional_privacy_login_message' );
 //checking buddypress activity stream
 add_action( 'bp_activity_before_save', 'hide_activity' );
 
+add_filter( 'site_option_blog_public', 'additional_privacy_blog_public');
+
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
 //------------------------------------------------------------------------//
@@ -72,10 +74,14 @@ function additional_privacy_init() {
     load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
+function additional_privacy_blog_public($value) {
+    return "".intval($value)."";
+}
+
 function additional_privacy_admin_init() {
     wp_register_script('additional_privacy_admin_js', plugins_url('js/admin.js', __FILE__), array('jquery'));
     
-    if ( get_site_option('privacy_update_all_blogs', 2) == 1 )  {
+    if ( isset($_COOKIE['privacy_update_all_blogs']) && $_COOKIE['privacy_update_all_blogs'] == 1 )  {
         global $wpdb;
         $blog_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) as count FROM $wpdb->blogs WHERE blog_id != '1' AND deleted = 0 AND spam = 0;"));
         if ($blog_count > 0) {
@@ -87,9 +93,13 @@ function additional_privacy_admin_init() {
                 <h2><?php _e('Applying to blogs, please wait...', CLASSES_TRANSLATION_DOMAIN); ?></h2>
                 <?php
                 echo sprintf(__('%d of %d blogs updated', CLASSES_TRANSLATION_DOMAIN), $blogs_completed, $blog_count);
+                $privacy_default = get_site_option('privacy_default');
+                if (empty($privacy_default) || $privacy_default == "00") {
+                    $privacy_default = "0";
+                }
                 foreach ( $blogs as $blog ) {
                     $blogs_completed++;
-                    update_blog_option($blog['blog_id'], "blog_public", get_site_option('privacy_default')) ;
+                    update_blog_option($blog['blog_id'], "blog_public", $privacy_default);
                 }
                 ?>
                 <script type="text/javascript">
@@ -98,7 +108,7 @@ function additional_privacy_admin_init() {
                             echo network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1));
                         } else {
                             echo network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed);
-                            update_site_option('privacy_update_all_blogs', 2);
+                            setcookie('privacy_update_all_blogs', "0");
                         }
                     ?>';
                 </script>
@@ -106,7 +116,7 @@ function additional_privacy_admin_init() {
                 exit();
             }
         } else {
-            update_site_option('privacy_update_all_blogs', 2);
+            setcookie('privacy_update_all_blogs', "0");
         }
     }  
 }
@@ -418,11 +428,13 @@ function additional_privacy_can_access_blog($blog_id) {
 }
 
 function additional_privacy() {
-    if ( get_option('blog_public') == '-4' && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
+    global $blog_id;
+    
+    if ( get_blog_option($blog_id, 'blog_public') == '-4' && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         wp_enqueue_script( 'jquery' );
     }
     
-    $privacy = get_option('blog_public');
+    $privacy = get_blog_option($blog_id, 'blog_public');
     if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], 'wp-signup') && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
 
     switch( $privacy ) {
@@ -488,7 +500,7 @@ function additional_privacy_site_admin_options_process() {
     
     update_site_option( 'sitewide_privacy_signup_options', $_POST['sitewide_privacy_signup_options'] );
     if (empty($_POST['privacy_default'])) {
-        update_site_option( 'privacy_default' , "0{$_POST['privacy_default']}" );
+        update_site_option( 'privacy_default' , "00" );
     } else {
         update_site_option( 'privacy_default' , $_POST['privacy_default'] );
     }
@@ -497,8 +509,7 @@ function additional_privacy_site_admin_options_process() {
     
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
 	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1' AND active = 1 AND deleted = 0 AND spam = 0 ");
-        
-        update_site_option( 'privacy_update_all_blogs' , 1 );
+        setcookie('privacy_update_all_blogs', "1");
     }
 }
 
@@ -579,9 +590,19 @@ function additional_privacy_deny_message( $privacy ) {
 	exit();
 }
 
-function additional_privacy_blog_options() {
+function additional_privacy_is_pro() {
     if (function_exists('is_pro_site') && (!(is_pro_site() || !psts_show_ads()))) {
-        return;
+        return false;
+    }
+    return true;
+}
+
+function additional_privacy_blog_options() {
+    if (!additional_privacy_is_pro()) {
+        global $psts;
+        $feature_message = str_replace( 'LEVEL', $psts->get_level_setting($level, 'name', $psts->get_setting('rebrand')),
+                                       "To use the extra privacy options, please upgrade to LEVEL &#187;" );
+        echo '<div id="message" class="error"><p><a href="' . $psts->checkout_url($blog_id) . '">' . $feature_message . '</a></p></div>';
     }
     
     $blog_public            = get_option( 'blog_public' );
@@ -606,19 +627,19 @@ function additional_privacy_blog_options() {
     <br />
     <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
 
-    <input id="blog-privacy-reguser" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-reguser" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> <?php echo (additional_privacy_is_pro())?'':'disabled="disabled"'; ?> />
     <label><?php printf( __( 'Visitors must have a login - anyone that is a registered user of %s can gain access.', 'sitewide-privacy-options' ), $text_network_name ) ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
 
-    <input id="blog-privacy-bloguser" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-bloguser" type="radio" name="blog_public" value="-2" <?php if ( $blog_public == '-2' ) { echo 'checked="checked"'; } ?> <?php echo (additional_privacy_is_pro())?'':'disabled="disabled"'; ?> />
     <label><?php printf( __( 'Only registered users of this blogs can have access - anyone found under %s can have access.', 'sitewide-privacy-options'), $text_all_user_link ); ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['admin'] ) &&  '1' == $privacy_available['admin'] ): ?>
 
-    <input id="blog-privacy-admin" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-admin" type="radio" name="blog_public" value="-3" <?php if ( $blog_public == '-3' ) { echo 'checked="checked"'; } ?> <?php echo (additional_privacy_is_pro())?'':'disabled="disabled"'; ?> />
     <label><?php _e( 'Only administrators can visit - good for testing purposes before making it live.', 'sitewide-privacy-options' ); ?></label>
     <br />
     <?php endif ?>
@@ -637,10 +658,10 @@ function additional_privacy_blog_options() {
     </script>
 
     <br />
-    <input id="blog-privacy-pass" type="radio" name="blog_public" value="-4" <?php if ( $blog_public == '-4' ) { echo 'checked="checked"'; } ?> />
+    <input id="blog-privacy-pass" type="radio" name="blog_public" value="-4" <?php if ( $blog_public == '-4' ) { echo 'checked="checked"'; } ?> <?php echo (additional_privacy_is_pro())?'':'disabled="disabled"'; ?> />
     <label><?php _e( 'Anyone that visits must first provide this password:', 'sitewide-privacy-options' ); ?></label>
     <br />
-    <input id="blog_pass" type="text" name="blog_pass" value="<?php if ( isset( $spo_settings['blog_pass'] ) ) { echo $spo_settings['blog_pass']; } ?>" <?php if ( '-4'  != $blog_public ) { echo 'readonly'; } ?> />
+    <input id="blog_pass" type="text" name="blog_pass" value="<?php if ( isset( $spo_settings['blog_pass'] ) ) { echo $spo_settings['blog_pass']; } ?>" <?php if ( '-4'  != $blog_public ) { echo 'readonly'; } ?> <?php echo (additional_privacy_is_pro())?'':'disabled="disabled"'; ?> />
     <br />
     <span class="description"><?php _e( "Note: Anyone that is a registered user of this blog won't need this password.", 'sitewide-privacy-options' ); ?></span>
     <?php endif; ?>
@@ -731,6 +752,7 @@ function additional_privacy_site_admin_options() {
 	        <?php _e('Allow Blog Administrators to modify the privacy setting for their blog(s). Note that Site Admins will always be able to edit blog privacy options.', 'sitewide-privacy-options') ?>
 	    </td>
 	</tr>
+        <?php if (!function_exists('is_edublogs')) { ?>
 	<tr valign="top">
 	    <th scope="row"><?php _e('Update All Blogs', 'sitewide-privacy-options') ?></th>
 	    <td>
@@ -739,6 +761,7 @@ function additional_privacy_site_admin_options() {
 		<?php _e('Updates all blogs with the default privacy setting. The main blog is not updated. Please be patient as this can take a few minutes.', 'sitewide-privacy-options') ?>
 	    </td>
 	</tr>
+        <?php } ?>
     </table>
     <?php
 }
