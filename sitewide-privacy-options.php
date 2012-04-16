@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds three more levels of privacy and allows you to control them across all blogs - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.4
+Version: 1.1.3
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -159,7 +159,11 @@ function spo_is_mobile_app() {
 
 
 function new_privacy_options_on_signup() {
-    $blog_public = get_option('blog_public');
+    global $blog_id;
+    $blog_public = get_blog_option($blog_id,'blog_public');
+    if (!$blog_public) {
+        $blog_public = get_option('blog_public');
+    }
     $text_network_name      = get_site_option( 'site_name' );
     if (!$text_network_name) {
         $text_network_name = 'site';
@@ -258,7 +262,9 @@ function remove_default_privacy_signup() {
     <?php
 }
 
-if ( get_option('blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] && !function_exists('wp_authenticate')) {
+global $current_blog;
+
+if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] && !function_exists('wp_authenticate')) {
     
     function wp_authenticate($username, $password) {
         $username = sanitize_user($username);
@@ -273,7 +279,7 @@ if ( get_option('blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_
             $spo_settings = get_option( 'spo_settings' );
             if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
                 $value = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
-                setcookie( 'spo_blog_access', $value, time() + 1800 );
+                setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->domain.$current_blog->path );
                 wp_safe_redirect( $redirect_to );
             } else {
                 $errors = new WP_Error();
@@ -296,12 +302,12 @@ if ( get_option('blog_public') == '-4' && isset( $_GET['privacy'] ) && '4' == $_
 }
 
 function additional_privacy_login_message() {
-    global $errors;
-    if ( get_option('blog_public') == '-1' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '1' ) {
+    global $errors, $blog_id, $current_blog;
+    if ( $current_blog->public == '-1' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '1' ) {
         $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are logged in.', 'sitewide-privacy-options'));
-    } else if ( get_option('blog_public') == '-2' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '2' ) {
+    } else if ( $current_blog->public  == '-2' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '2' ) {
 	$errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options'));
-    } else if ( get_option('blog_public') == '-3' && isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '3' ) {
+    } else if ( $current_blog->public == '-3' && isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '3' ) {
         $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by administrators.', 'sitewide-privacy-options'));
     }
 }
@@ -310,9 +316,9 @@ function additional_privacy_login_message() {
  * templates for single password form
  */
 function single_password_template( $page ) {
-    global $errors, $reauth, $blog_id;
+    global $errors, $reauth, $blog_id, $current_blog;
     
-    if ( (get_blog_option($blog_id, 'blog_public') == '-4' || get_option('blog_public') == '-4') && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
+    if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         if ( isset( $_REQUEST['redirect_to'] ) )
             $redirect_to = 'redirect_to='.$_REQUEST['redirect_to'];
         else
@@ -422,7 +428,6 @@ function additional_privacy_can_access_blog($blog_id) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
                         return false;
                     }
-                    setcookie( 'spo_blog_access', $value, time() + 1800 );
                 }
                 break;
     }
@@ -432,14 +437,12 @@ function additional_privacy_can_access_blog($blog_id) {
 function additional_privacy() {
     global $blog_id, $user_id, $current_blog;
     
-    if ( (get_blog_option($blog_id, 'blog_public') == '-4' || get_option('blog_public') == '-4') && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
+    if ( $current_blog->public == '-4' && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         wp_enqueue_script( 'jquery' );
     }
     
-    $privacy = get_blog_option($blog_id, 'blog_public');
-    if (!$privacy) {
-        $privacy = get_option('blog_public');
-    }
+    $privacy = $current_blog->public;
+    
     if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], 'wp-signup') && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
     
     switch( $privacy ) {
@@ -482,14 +485,13 @@ function additional_privacy() {
                         wp_redirect( site_url("wp-login.php?privacy=4&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
                         exit();
                     }
-                    setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->domain.$current_blog->path );
                 }
                 break;
             }
         }
     }
     $file_value = hash_hmac('md5', "{$blog_id} file access yes", LOGGED_IN_SALT);
-    setcookie( "spo_{$blog_id}_file_access", $file_value, time() + 1800,  $current_blog->domain.$current_blog->path);
+    setcookie( "spo_{$blog_id}_file_access", $file_value, time() + 1800, $current_blog->domain.$current_blog->path);
 }
 
 function additional_privacy_set_default($blog_id, $user_id) {
