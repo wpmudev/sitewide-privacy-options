@@ -524,6 +524,7 @@ function additional_privacy_site_admin_options_process() {
 
 function additional_privacy_modify_menu_items() {
 	global $submenu, $menu, $wpdb;
+        // echo '<!-- ' . get_site_option('privacy_override') . ' -->';
 	if ( get_site_option('privacy_override') != 'yes' && !is_super_admin() && $wpdb->blogid != 1 ) {
 	    unset( $submenu['options-general.php'][35] );
 	}
@@ -685,7 +686,7 @@ function additional_privacy_site_admin_options() {
     }
     $privacy_override       = get_site_option('privacy_override');
     if (!$privacy_override) {
-        $privacy_override = 'yes';
+        $privacy_override = 'no';
     }
 
     $default_available      = array(
