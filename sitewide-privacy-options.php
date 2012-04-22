@@ -279,7 +279,7 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
             $spo_settings = get_option( 'spo_settings' );
             if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
                 $value = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
-                setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->domain.$current_blog->path );
+                setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->path );
                 wp_safe_redirect( $redirect_to );
             } else {
                 $errors = new WP_Error();
@@ -491,7 +491,7 @@ function additional_privacy() {
         }
     }
     $file_value = hash_hmac('md5', "{$blog_id} file access yes", LOGGED_IN_SALT);
-    setcookie( "spo_{$blog_id}_file_access", $file_value, time() + 1800, $current_blog->domain.$current_blog->path);
+    setcookie( "spo_{$blog_id}_fa", $file_value, time() + 1800, $current_blog->path);
 }
 
 function additional_privacy_set_default($blog_id, $user_id) {
