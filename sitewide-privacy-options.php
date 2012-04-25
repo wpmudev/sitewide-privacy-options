@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Sitewide Privacy Options for WordPress Multisite
+Plugin Name: Multisite Privacy
 Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-wordpress-mu
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
