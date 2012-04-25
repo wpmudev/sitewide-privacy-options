@@ -1,7 +1,11 @@
-=== Additional Privacy ===
+=== Multisite Privacy ===
 Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 
 == Changelog ==
+
+= 1.1.6 =
+* Choose whether to make Privacy Pro only
+* Plugin name change
 
 = 1.1.5 =
 * Possible fix for infinite redirect in network admin
