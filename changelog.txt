@@ -6,6 +6,7 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 = 1.1.6 =
 * Choose whether to make Privacy Pro only
 * Plugin name change
+* Fixed: Password protect and registered only can view
 
 = 1.1.5 =
 * Possible fix for infinite redirect in network admin
