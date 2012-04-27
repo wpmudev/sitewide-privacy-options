@@ -90,9 +90,9 @@ function additional_privacy_admin_init() {
             $blogs = $wpdb->get_results( $wpdb->prepare("SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ORDER BY blog_id LIMIT %d, %d;", $blogs_completed, $blog_limit), ARRAY_A );
             if ( count( $blogs ) > 0 ) {
                 ?>
-                <h2><?php _e('Applying to sites, please wait...', CLASSES_TRANSLATION_DOMAIN); ?></h2>
+                <h2><?php _e('Applying to sites, please wait...', 'sitewide-privacy-options'); ?></h2>
                 <?php
-                echo sprintf(__('%d of %d sites updated', CLASSES_TRANSLATION_DOMAIN), $blogs_completed, $blog_count);
+                echo sprintf(__('%d of %d sites updated', 'sitewide-privacy-options'), $blogs_completed, $blog_count);
                 $privacy_default = get_site_option('privacy_default');
                 if (empty($privacy_default) || $privacy_default == "00") {
                     $privacy_default = "0";
@@ -170,7 +170,7 @@ function new_privacy_options_on_signup() {
     if (!$text_network_name) {
         $text_network_name = 'site';
     }
-    $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
+    $text_all_user_link     = '<a href="'. admin_url(). 'users.php">'.__('Users > All Users', 'sitewide-privacy-options').'</a>';
 
     $default_available = array(
         'private'       => '1',
@@ -615,8 +615,7 @@ function additional_privacy_is_pro() {
 function additional_privacy_blog_options() {
     if (!additional_privacy_is_pro()) {
         global $psts;
-        $feature_message = str_replace( 'LEVEL', $psts->get_level_setting($level, 'name', $psts->get_setting('rebrand')),
-                                       "To use the extra privacy options, please upgrade to LEVEL &#187;" );
+        $feature_message = str_replace( 'LEVEL', $psts->get_level_setting($level, 'name', $psts->get_setting('rebrand')), __("To use the extra privacy options, please upgrade to LEVEL &#187;", 'sitewide-privacy-options') );
         echo '<div id="message" class="error"><p><a href="' . $psts->checkout_url($blog_id) . '">' . $feature_message . '</a></p></div>';
     }
     
@@ -626,7 +625,7 @@ function additional_privacy_blog_options() {
     if (!$text_network_name) {
         $text_network_name = 'site';
     }
-    $text_all_user_link     = '<a href="'. admin_url(). 'users.php">Users > All Users</a>';
+    $text_all_user_link     = '<a href="'. admin_url(). 'users.php">'.__('Users > All Users', 'sitewide-privacy-options').'</a>';
 
     $default_available      = array(
         'private'       => '1',
