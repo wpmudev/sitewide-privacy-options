@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.6.2 =
+* Fixed: Single Password for Blog not working
+
 = 1.1.6.1 =
 * Fixed: Privacy Options BP Conflict
 
