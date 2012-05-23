@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.6.2
+Version: 1.1.6.3
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -283,6 +283,11 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
                 $value = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
                 setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->path );
                 wp_safe_redirect( $redirect_to );
+                ?>
+                <script type="text/javascript">
+                    window.location = '<?php echo $redirect_to; ?>';
+                </script>
+                <?php
                 exit();
             } else {
                 $errors = new WP_Error();
@@ -329,7 +334,7 @@ function single_password_template( $page ) {
         ?>
         <script type="text/javascript">
             jQuery( document ).ready( function() {
-                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4&'.$redirect_to); ?>' );
+                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4'); ?>' );
                 jQuery( '#loginform' ).attr( 'id', 'loginform4' );
                 jQuery( '#loginform' ).attr( 'name', 'loginform4' );
                 jQuery( '#user_pass' ).attr( 'id', 'blog_pass');
