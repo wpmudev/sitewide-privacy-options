@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.6.5 =
+* Fixed: Update All Blogs is not network aware
+
 = 1.1.6.4 =
 * Fixed: More IIS issues
 

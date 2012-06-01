@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.6.4
+Version: 1.1.6.5
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -82,12 +82,12 @@ function additional_privacy_admin_init() {
     wp_register_script('additional_privacy_admin_js', plugins_url('js/admin.js', __FILE__), array('jquery'));
     
     if ( isset($_COOKIE['privacy_update_all_blogs']) && $_COOKIE['privacy_update_all_blogs'] == 1 )  {
-        global $wpdb;
-        $blog_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) as count FROM $wpdb->blogs WHERE blog_id != '1' AND deleted = 0 AND spam = 0;"));
+        global $wpdb, $site_id;
+        $blog_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) as count FROM $wpdb->blogs WHERE blog_id != '1' AND site_id = '{$site_id}' AND deleted = 0 AND spam = 0;"));
         if ($blog_count > 0) {
             $blogs_completed = isset($_REQUEST['offset'])?intval($_REQUEST['offset']):0;
             $blog_limit = 100;
-            $blogs = $wpdb->get_results( $wpdb->prepare("SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ORDER BY blog_id LIMIT %d, %d;", $blogs_completed, $blog_limit), ARRAY_A );
+            $blogs = $wpdb->get_results( $wpdb->prepare("SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1' AND site_id = '{$site_id}' AND deleted = 0 AND spam = 0 ORDER BY blog_id LIMIT %d, %d;", $blogs_completed, $blog_limit), ARRAY_A );
             if ( count( $blogs ) > 0 ) {
                 ?>
                 <h2><?php _e('Applying to sites, please wait...', 'sitewide-privacy-options'); ?></h2>
