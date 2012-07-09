@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.6.5
+Version: 1.1.6.6
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -108,17 +108,15 @@ function additional_privacy_admin_init() {
                             echo network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1));
                         } else {
                             echo network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed);
-                            setcookie('privacy_update_all_blogs', "0", time()+1800, '/');
+                            setcookie('privacy_update_all_blogs', "0");
                         }
                     ?>';
                 </script>
                 <?php
                 exit();
-            } else {
-                setcookie('privacy_update_all_blogs', "0", time()+1800, '/');
             }
         } else {
-            setcookie('privacy_update_all_blogs', "0", time()+1800, '/');
+            setcookie('privacy_update_all_blogs', "0");
         }
     }  
 }
@@ -272,7 +270,7 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
         $username = sanitize_user($username);
         $password = trim($password);
         
-        if ( isset( $_REQUEST['redirect_to'] ) && !empty($_REQUEST['redirect_to']) )
+        if ( isset( $_REQUEST['redirect_to'] ) )
             $redirect_to = $_REQUEST['redirect_to'];
         else
             $redirect_to = home_url();
@@ -283,12 +281,6 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
                 $value = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
                 setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->path );
                 wp_safe_redirect( $redirect_to );
-                ?>
-                <script type="text/javascript">
-                    window.location = '<?php echo $redirect_to; ?>';
-                </script>
-                <?php
-                exit();
             } else {
                 $errors = new WP_Error();
                 $errors->add('incorrect_password', __('<strong>ERROR</strong>: Incorrect Password', 'sitewide-privacy-options'));
@@ -334,7 +326,7 @@ function single_password_template( $page ) {
         ?>
         <script type="text/javascript">
             jQuery( document ).ready( function() {
-                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4'); ?>' );
+                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4&'.$redirect_to); ?>' );
                 jQuery( '#loginform' ).attr( 'id', 'loginform4' );
                 jQuery( '#loginform' ).attr( 'name', 'loginform4' );
                 jQuery( '#user_pass' ).attr( 'id', 'blog_pass');
@@ -367,7 +359,7 @@ function single_password_template( $page ) {
  * save the single pasword when change privacy option
  */
 function save_single_password( $option ) {
-    if ( '-4' == $_POST['blog_public'] ) {
+    if ( isset($_POST['blog_public']) && '-4' == $_POST['blog_public'] ) {
         $spo_settings = array(
             'blog_pass' => $_POST['blog_pass']
         );
@@ -498,10 +490,8 @@ function additional_privacy() {
             }
         }
     }
-    if (!headers_sent()) {
-        $file_value = hash_hmac('md5', "{$blog_id} file access yes", LOGGED_IN_SALT);
-        setcookie("spo_{$blog_id}_fa", $file_value, time() + 1800, $current_blog->path);
-    }
+    $file_value = hash_hmac('md5', "{$blog_id} file access yes", LOGGED_IN_SALT);
+    setcookie( "spo_{$blog_id}_fa", $file_value, time() + 1800, $current_blog->path);
 }
 
 function additional_privacy_set_default($blog_id, $user_id) {
@@ -531,7 +521,7 @@ function additional_privacy_site_admin_options_process() {
     
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
 	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1' AND active = 1 AND deleted = 0 AND spam = 0 ");
-        setcookie('privacy_update_all_blogs', "1", time()+1800, '/');
+        setcookie('privacy_update_all_blogs', "1");
     }
 }
 
