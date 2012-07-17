@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.6.7 =
+* Do not redirect if in sign up page
+
 = 1.1.6.6 =
 * Bug fixes
 
