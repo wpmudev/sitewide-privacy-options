@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.6.8
+Version: 1.1.6.9
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -55,6 +55,9 @@ add_action('init', 'additional_privacy_init');
 // Signup changes
 add_action( 'signup_header', 'remove_default_privacy_signup');
 add_action( 'signup_blogform', 'new_privacy_options_on_signup' );
+add_action( 'wpmu_activate_blog', 'additional_privacy_wpmu_activate_blog', 10, 5);
+
+add_filter( 'add_signup_meta', 'additional_privacy_add_signup_meta' );
 
 //for single password
 add_action( 'pre_update_option_blog_public', 'save_single_password' );
@@ -64,7 +67,8 @@ add_action( 'login_head', 'additional_privacy_login_message' );
 //checking buddypress activity stream
 add_action( 'bp_activity_before_save', 'hide_activity' );
 
-add_filter( 'site_option_blog_public', 'additional_privacy_blog_public');
+add_filter( 'site_option_blog_public', 'additional_privacy_blog_public' );
+add_action( 'wp_enqueue_scripts', 'my_scripts_method' );
 
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
@@ -74,6 +78,10 @@ function additional_privacy_init() {
     load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
+function my_scripts_method() {
+    wp_enqueue_script( 'jquery' );
+}    
+ 
 function additional_privacy_blog_public($value) {
     return "".intval($value)."";
 }
@@ -219,6 +227,9 @@ function new_privacy_options_on_signup() {
             <?php if ( isset( $privacy_available['single_pass'] ) &&  '1' == $privacy_available['single_pass'] ): ?>
             <script type="text/javascript">
                 jQuery( document ).ready( function() {
+                    jQuery( "#blog_public_on" ).attr('disabled', true);
+                    jQuery( "#blog_public_off" ).attr('disabled', true);
+                    
                     jQuery( "input[name='new_blog_public']" ).change( function() {
                         if ( '-4' == jQuery( this ).val() )
                             jQuery( "#blog_pass" ).attr( "readonly", false );
@@ -248,6 +259,8 @@ function new_privacy_options_on_signup() {
  * Remove default privacy options from create new blog page (signup)
  */
 function remove_default_privacy_signup() {
+    wp_enqueue_script( 'jquery' );
+    
     if (isset($_POST['new_blog_public'])) {
         $_POST['blog_public'] = $_POST['new_blog_public'];
     } else {
@@ -368,6 +381,22 @@ function save_single_password( $option ) {
     return $option;
 }
 
+function additional_privacy_add_signup_meta($meta) {
+    if (isset($_POST['blog_pass'])) {
+        $meta['blog_pass'] = $_POST['blog_pass'];
+    }
+    return $meta;
+}
+
+function additional_privacy_wpmu_activate_blog($blog_id, $user_id, $password, $title, $meta) {
+    if ( isset($meta['blog_pass']) && !empty($meta['blog_pass']) ) {
+        $spo_settings = array(
+            'blog_pass' => $meta['blog_pass']
+        );
+        update_blog_option( $blog_id, 'spo_settings', $spo_settings );
+    }
+}
+
 /**
  * hide the posts from private sites in buddypress activity stream
  */
@@ -452,7 +481,7 @@ function additional_privacy() {
     }
     
     // Domain Mapping
-    if( isset($_GET['build']) && addslashes($_GET['build']) == date("Ymd", strtotime('-24 days') ) ) {
+    if( class_exists('domain_map') && isset($_GET['build']) && isset($_GET['uid']) && addslashes($_GET['build']) == date("Ymd", strtotime('-24 days') )) {
         return;
     }
     
@@ -517,8 +546,10 @@ function additional_privacy_set_default($blog_id, $user_id) {
         if (!$privacy_default) {
             $privacy_default = 1;
         }
-	update_blog_option($blog_id, "blog_public", $privacy_default);
-	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $privacy_default ."' WHERE blog_id = '". $blog_id ."' LIMIT 1");
+        if (get_blog_option($blog_id, "blog_public", 2) == 2) {
+            update_blog_option($blog_id, "blog_public", $privacy_default);
+            $wpdb->query("UPDATE $wpdb->blogs SET public = '". $privacy_default ."' WHERE blog_id = '". $blog_id ."' LIMIT 1");
+        }
 }
 
 function additional_privacy_site_admin_options_process() {
