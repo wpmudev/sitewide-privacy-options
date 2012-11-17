@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.7.0
+Version: 1.1.7.1
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -500,14 +500,14 @@ function additional_privacy() {
     switch( $privacy ) {
             case '-1': {
                 if ( ! is_user_logged_in() ) {
-                    spo_redirect( wp_login_url( home_url($wp->request) )."&privacy=1" );
+                    spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=1" );
                     exit();
                 }
                 break;
             }
             case '-2': {
                 if ( ! is_user_logged_in() ) {
-                    spo_redirect( wp_login_url( home_url($wp->request) )."&privacy=2" );
+                    spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=2" );
                     exit();
                 } else {
                     if ( ! current_user_can( 'read' ) ) {
@@ -518,7 +518,7 @@ function additional_privacy() {
             }
             case '-3': {
                 if ( ! is_user_logged_in() ) {
-                    spo_redirect( wp_login_url( home_url($wp->request) )."&privacy=4" );
+                    spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=4" );
                     exit();
                 } else {
                     if ( ! current_user_can( 'manage_options' ) ) {
@@ -534,7 +534,7 @@ function additional_privacy() {
                 
                 if ( !current_user_can( 'read' ) ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
-                        spo_redirect( wp_login_url( home_url($wp->request) )."&privacy=4" );
+                        spo_redirect( wp_login_url( home_url($_SERVER['REQUEST_URI']) )."&privacy=4" );
                         exit();
                     }
                 }
