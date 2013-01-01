@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.7.3
+Version: 1.1.7.4
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -489,7 +489,7 @@ function additional_privacy() {
     $register_part = str_replace(site_url('/'), PATH_CURRENT_SITE, $register_url);
     $privacy = $current_blog->public;
     
-    $_request_path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $_request_path = parse_url("http://example.com/{$_SERVER['REQUEST_URI']}", PHP_URL_PATH);
     
     if ( is_numeric($privacy) && $privacy < 0 &&
         !stristr($_request_path, 'wp-activate') &&

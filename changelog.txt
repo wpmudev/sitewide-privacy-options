@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.7.4 =
+* Fixed: Single password issues
+
 = 1.1.7.3 =
 * Fixed: warning missing argument 2 for wpdb:prepare()
 
