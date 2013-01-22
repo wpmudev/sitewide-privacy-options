@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.7.4
+Version: 1.1.7.5
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -65,10 +65,10 @@ add_action( 'login_head', 'single_password_template' );
 add_action( 'login_head', 'additional_privacy_login_message' );
 
 //checking buddypress activity stream
-add_action( 'bp_activity_before_save', 'hide_activity' );
+add_action( 'bp_activity_before_save', 'additional_privacy_hide_activity' );
 
 add_filter( 'site_option_blog_public', 'additional_privacy_blog_public' );
-add_action( 'wp_enqueue_scripts', 'my_scripts_method' );
+add_action( 'wp_enqueue_scripts', 'additional_privacy_scripts_method' );
 
 //------------------------------------------------------------------------//
 //---Functions------------------------------------------------------------//
@@ -78,7 +78,7 @@ function additional_privacy_init() {
     load_plugin_textdomain( 'sitewide-privacy-options', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
-function my_scripts_method() {
+function additional_privacy_scripts_method() {
     wp_enqueue_script( 'jquery' );
 }    
  
@@ -400,7 +400,7 @@ function additional_privacy_wpmu_activate_blog($blog_id, $user_id, $password, $t
 /**
  * hide the posts from private sites in buddypress activity stream
  */
-function hide_activity( $activity ) {
+function additional_privacy_hide_activity( $activity ) {
 
     if ( function_exists( 'bp_get_root_blog_id' ) )
         $bp_root_blog_id = bp_get_root_blog_id();
