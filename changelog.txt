@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.7.6 =
+* Fix: Update all blogs
+
 = 1.1.7.5 =
 * Namespace functions better
 

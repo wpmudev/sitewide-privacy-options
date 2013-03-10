@@ -495,7 +495,9 @@ function additional_privacy() {
         !stristr($_request_path, 'wp-activate') &&
         !stristr($_request_path, $register_part) &&
         !stristr($_request_path, 'wp-login') &&
-        !stristr($_request_path, 'wp-admin') ) {
+        !stristr($_request_path, 'wp-admin') &&
+        !stristr($_request_path, 'xmlrpc') &&
+        !stristr($_request_path, 'wp-cron') ) {
         
         $_redirect_to = preg_replace( '/^'.str_replace('/', '\/', $current_blog->path).'/', '', trailingslashit($_SERVER['REQUEST_URI'])).'/';
         $_redirect_to = site_url($_redirect_to);
@@ -583,7 +585,7 @@ function additional_privacy_site_admin_options_process() {
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
     
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
-	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1' AND active = 1 AND deleted = 0 AND spam = 0 ");
+	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ");
         setcookie('privacy_update_all_blogs', "1");
     }
 }
