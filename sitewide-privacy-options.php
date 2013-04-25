@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.7.7
+Version: 1.1.7.8
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -565,7 +565,7 @@ function additional_privacy_set_default($blog_id, $user_id) {
         }
         if (get_blog_option($blog_id, "blog_public", 2) == 2) {
             update_blog_option($blog_id, "blog_public", $privacy_default);
-            $wpdb->query("UPDATE $wpdb->blogs SET public = '". $privacy_default ."' WHERE blog_id = '". $blog_id ."' LIMIT 1");
+            $wpdb->query( $wpdb->prepare("UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id = %d LIMIT 1", $privacy_default, $blog_id) );
         }
 }
 
@@ -585,7 +585,7 @@ function additional_privacy_site_admin_options_process() {
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
     
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
-	$wpdb->query("UPDATE $wpdb->blogs SET public = '". $_POST['privacy_default'] ."' WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ");
+	$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ", $_POST['privacy_default'] ) );
         setcookie('privacy_update_all_blogs', "1");
     }
 }

@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.7.8 =
+* Fix: Escape default privacy in update all blogs
+
 = 1.1.7.7 =
 * Fix: Allow override not working
 
