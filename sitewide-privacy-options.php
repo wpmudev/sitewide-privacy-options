@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.7.8
+Version: 1.1.7.9
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -277,9 +277,11 @@ function remove_default_privacy_signup() {
 
 global $current_blog;
 
-if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] && !function_exists('wp_authenticate')) {
+if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
     
-    function wp_authenticate($username, $password) {
+    add_filter('authenticate', 'wp_authenticate_privacy', 800, 3);
+    
+    function wp_authenticate_privacy($user, $username, $password) {
         $username = sanitize_user($username);
         $password = trim($password);
         
@@ -294,9 +296,10 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
                 $value = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
                 setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->path );
                 wp_safe_redirect( $redirect_to );
+                exit();
             } else {
                 $errors = new WP_Error();
-                $errors->add('incorrect_password', __('<strong>ERROR</strong>: Incorrect Password', 'sitewide-privacy-options'));
+                $errors->add('incorrect_password', __('<strong>ERROR</strong>: Incorrect Password', 'sitewide-privacy-options'), 'error');
                 return $errors;
             }
         }
@@ -304,7 +307,7 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
         if ( $user == null ) {
             // TODO what should the error message be? (Or would these even happen?)
             // Only needed if all authentication handlers fail to return anything.
-            $user = new WP_Error('authorization_required', __('<strong>Authorization Required</strong>: This blog requires a password to view it.', 'sitewide-privacy-options'));
+            $user = new WP_Error('authorization_required', __('<strong>Authorization Required</strong>: This blog requires a password to view it.', 'sitewide-privacy-options'), 'message');
         }
         $ignore_codes = array('empty_username', 'empty_password');
         if (is_wp_error($user) && !in_array($user->get_error_code(), $ignore_codes) ) {
@@ -314,14 +317,14 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
     }
 }
 
-function additional_privacy_login_message() {
+function additional_privacy_login_message($message) {
     global $errors, $blog_id, $current_blog;
     if ( $current_blog->public == '-1' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '1' ) {
-        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are logged in.', 'sitewide-privacy-options'));
+        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are logged in.', 'sitewide-privacy-options'), 'message');
     } else if ( $current_blog->public  == '-2' && isset( $_GET['privacy'] ) && $_GET['privacy'] == '2' ) {
-	$errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options'));
+        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by users who are subscribed to this blog.', 'sitewide-privacy-options'), 'message');
     } else if ( $current_blog->public == '-3' && isset( $_GET['privacy'] ) &&  $_GET['privacy'] == '3' ) {
-        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by administrators.', 'sitewide-privacy-options'));
+        $errors->add('authorization_required', __('<strong>Authorization Required</strong>: This blog may only be viewed by administrators.', 'sitewide-privacy-options'), 'message');
     }
 }
 
