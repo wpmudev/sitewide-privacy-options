@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.8.0 =
+* Fix: Not setting multi-site privacy default values
+
 = 1.1.7.9 =
 * Compatible with plugins that use pluggable function wp_authenticate
 
