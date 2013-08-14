@@ -598,7 +598,7 @@ function additional_privacy_modify_menu_items() {
         // echo '<!-- ' . get_site_option('privacy_override') . ' -->';
 	if ( get_site_option('privacy_override') != 'yes' && !is_super_admin() && $wpdb->blogid != 1 ) {
 	    unset( $submenu['options-general.php'][35] );
-            unset( $wp_filter['blog_privacy_selector'] );
+        unset( $wp_filter['blog_privacy_selector'] );
 	}
 }
 
