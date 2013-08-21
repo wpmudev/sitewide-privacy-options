@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.8.0
+Version: 1.1.8.1
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -94,31 +94,31 @@ function additional_privacy_admin_init() {
         $blog_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) as count FROM $wpdb->blogs WHERE blog_id != '1' AND site_id = '%d' AND deleted = 0 AND spam = 0;", $site_id));
         if ($blog_count > 0) {
             $blogs_completed = isset($_REQUEST['offset'])?intval($_REQUEST['offset']):0;
-            $blog_limit = 100;
+            $blog_limit = 2;
             $blogs = $wpdb->get_results( $wpdb->prepare("SELECT blog_id FROM $wpdb->blogs WHERE blog_id != '1' AND site_id = '%d' AND deleted = 0 AND spam = 0 ORDER BY blog_id LIMIT %d, %d;", $site_id, $blogs_completed, $blog_limit), ARRAY_A );
             if ( count( $blogs ) > 0 ) {
                 ?>
                 <h2><?php _e('Applying to sites, please wait...', 'sitewide-privacy-options'); ?></h2>
                 <?php
-                echo sprintf(__('%d of %d sites updated', 'sitewide-privacy-options'), $blogs_completed, $blog_count);
+                echo sprintf(__('<span id="sbe-update-network-count">%d</span> of %d sites updated', 'sitewide-privacy-options'), $blogs_completed, $blog_count);
                 $privacy_default = get_site_option('privacy_default');
                 if (empty($privacy_default) || $privacy_default == "00") {
                     $privacy_default = "0";
                 }
+                ?>
+                <script type="text/javascript">
+                <?php
                 foreach ( $blogs as $blog ) {
                     $blogs_completed++;
                     update_blog_option($blog['blog_id'], "blog_public", $privacy_default);
+                    echo "document.getElementById('sbe-update-network-count').innerHTML='{$blogs_completed}';";
                 }
                 ?>
-                <script type="text/javascript">
-                        window.location ='<?php
-                        if ($blog_count > $blogs_completed) {
-                            echo network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1));
-                        } else {
-                            echo network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed);
-                            setcookie('privacy_update_all_blogs', "0");
-                        }
-                    ?>';
+                        window.location ='<?php echo ($blog_count > $blogs_completed)?
+                            network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1)):
+                            network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed); ?>';
+                        
+                        document.cookie="privacy_update_all_blogs=<?php echo ($blog_count > $blogs_completed)?1:0; ?>";
                 </script>
                 <?php
                 exit();
