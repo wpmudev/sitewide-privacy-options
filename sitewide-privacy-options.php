@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
 Author URI: http://premium.wpmudev.org
-Version: 1.1.8.1
+Version: 1.1.8.2
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -27,6 +27,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
+
+global $wpmudev_notices;
+$wpmudev_notices[] = array( 'id'=> 52, 'name'=> 'Multisite Privacy', 'screens' => array( 'settings-network' ) );
+include_once(plugin_dir_path( __FILE__ ).'external/dash-notice/wpmudev-dash-notification.php');
 
 //------------------------------------------------------------------------//
 //---Config---------------------------------------------------------------//
@@ -80,15 +84,15 @@ function additional_privacy_init() {
 
 function additional_privacy_scripts_method() {
     wp_enqueue_script( 'jquery' );
-}    
- 
+}
+
 function additional_privacy_blog_public($value) {
     return "".intval($value)."";
 }
 
 function additional_privacy_admin_init() {
     wp_register_script('additional_privacy_admin_js', plugins_url('js/admin.js', __FILE__), array('jquery'));
-    
+
     if ( isset($_COOKIE['privacy_update_all_blogs']) && $_COOKIE['privacy_update_all_blogs'] == 1 )  {
         global $wpdb, $site_id;
         $blog_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) as count FROM $wpdb->blogs WHERE blog_id != '1' AND site_id = '%d' AND deleted = 0 AND spam = 0;", $site_id));
@@ -117,7 +121,7 @@ function additional_privacy_admin_init() {
                         window.location ='<?php echo ($blog_count > $blogs_completed)?
                             network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1)):
                             network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed); ?>';
-                        
+
                         document.cookie="privacy_update_all_blogs=<?php echo ($blog_count > $blogs_completed)?1:0; ?>";
                 </script>
                 <?php
@@ -126,7 +130,7 @@ function additional_privacy_admin_init() {
         } else {
             setcookie('privacy_update_all_blogs', "0");
         }
-    }  
+    }
 }
 
 function additional_privacy_admin_enqueue_scripts($hook) {
@@ -229,7 +233,7 @@ function new_privacy_options_on_signup() {
                 jQuery( document ).ready( function() {
                     jQuery( "#blog_public_on" ).attr('disabled', true);
                     jQuery( "#blog_public_off" ).attr('disabled', true);
-                    
+
                     jQuery( "input[name='new_blog_public']" ).change( function() {
                         if ( '-4' == jQuery( this ).val() )
                             jQuery( "#blog_pass" ).attr( "readonly", false );
@@ -260,7 +264,7 @@ function new_privacy_options_on_signup() {
  */
 function remove_default_privacy_signup() {
     wp_enqueue_script( 'jquery' );
-    
+
     if (isset($_POST['new_blog_public'])) {
         $_POST['blog_public'] = $_POST['new_blog_public'];
     } else {
@@ -278,18 +282,18 @@ function remove_default_privacy_signup() {
 global $current_blog;
 
 if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
-    
+
     add_filter('authenticate', 'wp_authenticate_privacy', 800, 3);
-    
+
     function wp_authenticate_privacy($user, $username, $password) {
         $username = sanitize_user($username);
         $password = trim($password);
-        
+
         if ( isset( $_REQUEST['redirect_to'] ) )
             $redirect_to = $_REQUEST['redirect_to'];
         else
             $redirect_to = home_url();
-        
+
         if ( isset( $_POST['pwd'] ) ) {
             $spo_settings = get_option( 'spo_settings' );
             if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
@@ -333,7 +337,7 @@ function additional_privacy_login_message($message) {
  */
 function single_password_template( $page ) {
     global $errors, $reauth, $blog_id, $current_blog;
-    
+
     if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         if ( isset( $_REQUEST['redirect_to'] ) )
             $redirect_to = 'redirect_to='.$_REQUEST['redirect_to'];
@@ -411,7 +415,7 @@ function additional_privacy_hide_activity( $activity ) {
     if ( isset( $bp_root_blog_id ) && get_current_blog_id() != $bp_root_blog_id ) {
         //ID of BP blog
         $privacy_bp = get_blog_option( $bp_root_blog_id, 'blog_public' );
-        
+
         if (!$privacy_bp) {
             $privacy_bp = get_option( 'blog_public' );
         }
@@ -429,7 +433,7 @@ function additional_privacy_hide_activity( $activity ) {
 function additional_privacy_can_access_blog($blog_id) {
     $privacy = get_blog_option($blog_id, 'blog_public');
     switch( $privacy ) {
-            case '-1': 
+            case '-1':
                 if ( ! is_user_logged_in() ) {
                     return false;
                 }
@@ -478,22 +482,22 @@ function spo_redirect($url) {
 
 function additional_privacy() {
     global $blog_id, $user_id, $current_blog, $wp, $dm_map;
-    
+
     if ( $current_blog->public == '-4' && !is_user_logged_in() && isset( $_GET['privacy'] ) && '4' == $_GET['privacy'] ) {
         wp_enqueue_script( 'jquery' );
     }
-    
+
     // Domain Mapping
     if( class_exists('domain_map') && isset($_GET['build']) && isset($_GET['uid']) && addslashes($_GET['build']) == date("Ymd", strtotime('-24 days') )) {
         return;
     }
-    
+
     $register_url = apply_filters( 'wp_signup_location', site_url( 'wp-signup.php' ) );
     $register_part = str_replace(site_url('/'), PATH_CURRENT_SITE, $register_url);
     $privacy = $current_blog->public;
-    
+
     $_request_path = parse_url("http://example.com/{$_SERVER['REQUEST_URI']}", PHP_URL_PATH);
-    
+
     if ( is_numeric($privacy) && $privacy < 0 &&
         !stristr($_request_path, 'wp-activate') &&
         !stristr($_request_path, $register_part) &&
@@ -501,16 +505,16 @@ function additional_privacy() {
         !stristr($_request_path, 'wp-admin') &&
         !stristr($_request_path, 'xmlrpc') &&
         !stristr($_request_path, 'wp-cron') ) {
-        
+
         $_redirect_to = preg_replace( '/^'.str_replace('/', '\/', $current_blog->path).'/', '', trailingslashit($_SERVER['REQUEST_URI'])).'/';
         $_redirect_to = site_url($_redirect_to);
-        
+
         if (isset($dm_map) && method_exists($dm_map, 'swap_mapped_url')) {
             $_redirect_to = $dm_map->swap_mapped_url($_redirect_to);
         }
-        
+
         $_redirect_to = trailingslashit( $_redirect_to );
-        
+
         switch( $privacy ) {
             case '-1': {
                 if ( ! is_user_logged_in() ) {
@@ -545,7 +549,7 @@ function additional_privacy() {
             case '-4': {
                 $spo_settings           = get_option( 'spo_settings' );
                 $value                  = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
-                
+
                 if ( !current_user_can( 'read' ) ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
                         spo_redirect( wp_login_url( $_redirect_to )."&privacy=4" );
@@ -574,7 +578,7 @@ function additional_privacy_set_default($blog_id, $user_id) {
 
 function additional_privacy_site_admin_options_process() {
     global $wpdb;
-    
+
     if (isset($_POST['sitewide_privacy_pro_only'])) {
         update_site_option( 'sitewide_privacy_pro_only', $_POST['sitewide_privacy_pro_only'] );
     }
@@ -586,7 +590,7 @@ function additional_privacy_site_admin_options_process() {
     }
     update_site_option( 'privacy_override' , $_POST['privacy_override'] );
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
-    
+
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
 	$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ", $_POST['privacy_default'] ) );
         setcookie('privacy_update_all_blogs', "1");
@@ -685,7 +689,7 @@ function additional_privacy_blog_options() {
         $feature_message = str_replace( 'LEVEL', $psts->get_level_setting($level, 'name', $psts->get_setting('rebrand')), __("To use the extra privacy options, please upgrade to LEVEL &#187;", 'sitewide-privacy-options') );
         echo '<div id="message" class="error"><p><a href="' . $psts->checkout_url($blog_id) . '">' . $feature_message . '</a></p></div>';
     }
-    
+
     $blog_public            = get_option( 'blog_public' );
     $spo_settings           = get_option( 'spo_settings' );
     $text_network_name      = get_site_option( 'site_name' );
@@ -823,7 +827,7 @@ function additional_privacy_site_admin_options() {
 	    <td>
                 <label><input name="privacy_default" id="privacy_default" value="1" <?php if ( $privacy_default == '1' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Allow all visitors to all sites.', 'sitewide-privacy-options'); ?>
                 <br />
-                <small><?php _e('This makes all sites visible to everyone, including search engines (like Google, Sphere, Technorati), archivers and all public listings around your site.', 'sitewide-privacy-options'); ?></small></label>
+                <small class="description"><?php _e('This makes all sites visible to everyone, including search engines (like Google, Sphere, Technorati), archivers and all public listings around your site.', 'sitewide-privacy-options'); ?></small></label>
                 <br />
                 <label><input name="privacy_default" id="privacy_default" value="0" <?php if ( $privacy_default == '0' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Block search engines from all sites, but allow normal visitors to see all sites.', 'sitewide-privacy-options'); ?></label>
                 <br />
@@ -831,11 +835,11 @@ function additional_privacy_site_admin_options() {
                 <br />
 		<label><input name="privacy_default" id="privacy_default" value="-2" <?php if ( $privacy_default == '-2' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow a registered user to see a site for which they are registered to.', 'sitewide-privacy-options'); ?>
                 <br />
-                <small><?php _e('Even if a user is logged in, they must be a user of the individual site in order to see it.', 'sitewide-privacy-options'); ?></small></label>
+                <small class="description"><?php _e('Even if a user is logged in, they must be a user of the individual site in order to see it.', 'sitewide-privacy-options'); ?></small></label>
                 <br />
 		<label><input name="privacy_default" id="privacy_default" value="-3" <?php if ( $privacy_default == '-3' ) { echo 'checked="checked"'; } ?> type="radio"> <?php _e('Only allow administrators of a site to view the site for which they are an admin.', 'sitewide-privacy-options'); ?>
                 <br />
-                <small><?php _e('A Network Admin can always view any site, regardless of any privacy setting. (<em>Note:</em> "Network Admin", not an individual site admin.)', 'sitewide-privacy-options'); ?></small></label>
+                <small class="description"><?php _e('A Network Admin can always view any site, regardless of any privacy setting. (<em>Note:</em> "Network Admin", not an individual site admin.)', 'sitewide-privacy-options'); ?></small></label>
             </td>
 	</tr>
         <tr valign="top">
