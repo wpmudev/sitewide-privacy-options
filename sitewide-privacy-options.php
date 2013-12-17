@@ -28,10 +28,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-global $wpmudev_notices;
-$wpmudev_notices[] = array( 'id'=> 52, 'name'=> 'Multisite Privacy', 'screens' => array( 'settings-network' ) );
-include_once(plugin_dir_path( __FILE__ ).'external/dash-notice/wpmudev-dash-notification.php');
-
 //------------------------------------------------------------------------//
 //---Config---------------------------------------------------------------//
 //------------------------------------------------------------------------//
@@ -867,13 +863,6 @@ function additional_privacy_site_admin_options() {
 }
 
 /* Update Notifications Notice */
-if ( !function_exists( 'wdp_un_check' ) ) {
-    function wdp_un_check() {
-        if ( !class_exists('WPMUDEV_Update_Notifications') && current_user_can('edit_users') )
-            echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
-    }
-    add_action( 'admin_notices', 'wdp_un_check', 5 );
-    add_action( 'network_admin_notices', 'wdp_un_check', 5 );
-}
-
-?>
+global $wpmudev_notices;
+$wpmudev_notices[] = array( 'id'=> 52, 'name'=> 'Multisite Privacy', 'screens' => array( 'settings-network', 'options-reading' ) );
+include_once(plugin_dir_path( __FILE__ ).'external/dash-notice/wpmudev-dash-notification.php');
