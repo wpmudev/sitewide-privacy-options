@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.8.3 =
+* Fixed: Multisite Privacy Bug-Logged in user
+
 = 1.1.8.2 =
 * WordPress 3.8 compatibility
 
