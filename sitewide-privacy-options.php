@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: Multisite Privacy
-Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-wordpress-mu
+Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-wordpress-mu/
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
-Author: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith (Incsub)
+Author: WPMU DEV
 Author URI: http://premium.wpmudev.org
 Version: 1.1.8.3
 Network: true
@@ -12,7 +12,9 @@ License: GNU General Public License (Version 2 - GPLv2)
 */
 
 /*
-Copyright 2007-2011 Incsub (http://incsub.com)
+Copyright 2009-2014 Incsub (http://incsub.com)
+Author - 
+Contributors - Ivan Shaovchev, Andrew Billits, Andrey Shipilov, S H Mohanjith
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License (Version 2 - GPLv2) as published by
