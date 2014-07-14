@@ -13,7 +13,7 @@ License: GNU General Public License (Version 2 - GPLv2)
 
 /*
 Copyright 2009-2014 Incsub (http://incsub.com)
-Author - 
+Author - S H Mohanjith
 Contributors - Ivan Shaovchev, Andrew Billits, Andrey Shipilov, S H Mohanjith
 
 This program is free software; you can redistribute it and/or modify
