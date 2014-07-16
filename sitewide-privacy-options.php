@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: WPMU DEV
 Author URI: http://premium.wpmudev.org
-Version: 1.1.8.3
+Version: 1.1.8.4
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
@@ -62,7 +62,7 @@ add_action( 'wpmu_activate_blog', 'additional_privacy_wpmu_activate_blog', 10, 5
 add_filter( 'add_signup_meta', 'additional_privacy_add_signup_meta' );
 
 //for single password
-add_action( 'pre_update_option_blog_public', 'save_single_password' );
+add_action( 'pre_update_option_blog_public', 'save_single_password', 20, 2 );
 add_action( 'login_head', 'single_password_template' );
 add_action( 'login_head', 'additional_privacy_login_message' );
 
@@ -170,6 +170,9 @@ function spo_is_mobile_app() {
 
 
 function new_privacy_options_on_signup() {
+    if ( get_site_option('privacy_override') != 'yes' ) {
+        return;
+    }
     global $blog_id;
     $blog_public = get_blog_option($blog_id,'blog_public');
     if (!$blog_public) {
@@ -285,6 +288,8 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
     add_filter('authenticate', 'wp_authenticate_privacy', 800, 3);
 
     function wp_authenticate_privacy($user, $username, $password) {
+        global $dm_map, $current_blog;
+
         $username = sanitize_user($username);
         $password = trim($password);
 
@@ -295,9 +300,16 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
 
         if ( isset( $_POST['pwd'] ) ) {
             $spo_settings = get_option( 'spo_settings' );
-            if ( $_POST['pwd'] == $spo_settings['blog_pass'] ) {
+            if ( trim($_POST['pwd']) == trim($spo_settings['blog_pass']) ) {
                 $value = wp_hash( get_current_blog_id() . $spo_settings['blog_pass'] . 'blogaccess yes' );
                 setcookie( 'spo_blog_access', $value, time() + 1800, $current_blog->path );
+                
+                if ( isset($dm_map) && is_object($dm_map) && preg_match("/{$current_blog->domain}\\{$current_blog->path}/", $redirect_to) == 0 ) {
+                    $redirect_old = $redirect_to;
+                    $redirect_new = add_query_arg("redirect_to", $redirect_old, $redirect_old);
+                    $redirect_to = add_query_arg("spo_blog_access", $value, $redirect_new);
+                }
+
                 wp_safe_redirect( $redirect_to );
                 exit();
             } else {
@@ -318,6 +330,18 @@ if ( $current_blog->public == '-4' && isset( $_GET['privacy'] ) && '4' == $_GET[
         }
         return $user;
     }
+}
+
+if ( $current_blog->public == '-4' ) {
+    function spo_blog_access_init() {
+        global $current_blog;
+        if ( isset( $_GET['spo_blog_access'] ) && isset($_GET['redirect_to']) ) {
+            setcookie( 'spo_blog_access', $_GET['spo_blog_access'], time() + 1800, $current_blog->path );
+            wp_redirect( $_GET['redirect_to'] );
+            exit();
+        }
+    }
+    add_action('init', 'spo_blog_access_init');
 }
 
 function additional_privacy_login_message($message) {
@@ -345,7 +369,7 @@ function single_password_template( $page ) {
         ?>
         <script type="text/javascript">
             jQuery( document ).ready( function() {
-                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4&'.$redirect_to); ?>' );
+                jQuery( '#loginform' ).attr( 'action', '<?php echo site_url('wp-login.php?privacy=4&'.$redirect_to, 'login_post'); ?>' );
                 jQuery( '#loginform' ).attr( 'id', 'loginform4' );
                 jQuery( '#loginform' ).attr( 'name', 'loginform4' );
                 jQuery( '#user_pass' ).attr( 'id', 'blog_pass');
@@ -353,7 +377,7 @@ function single_password_template( $page ) {
                 jQuery( '#rememberme' ).parent( 'label' ).parent( 'p' ).remove();
                 jQuery( '#backtoblog' ).remove();
                 jQuery( '#nav' ).remove();
-                jQuery( '#loginform4' ).append('<br /><br /><br /><p><a href="<?php echo site_url('wp-login.php?'.$redirect_to); ?>"><?php _e('Or login here if you have a username', 'sitewide-privacy-options'); ?></a></p>');
+                jQuery( '#loginform4' ).append('<br /><br /><br /><p><a href="<?php echo site_url('wp-login.php?'.$redirect_to, 'login_post'); ?>"><?php _e('Or login here if you have a username', 'sitewide-privacy-options'); ?></a></p>');
                 jQuery( '#loginform4' ).submit( function() {
                     if ( '' == jQuery( '#blog_pass' ).val() ) {
                         jQuery( '#blog_pass' ).css( 'border-color', 'red' );
@@ -377,14 +401,18 @@ function single_password_template( $page ) {
 /**
  * save the single pasword when change privacy option
  */
-function save_single_password( $option ) {
-    if ( isset($_POST['blog_public']) && '-4' == $_POST['blog_public'] ) {
-        $spo_settings = array(
-            'blog_pass' => $_POST['blog_pass']
-        );
-        update_option( 'spo_settings', $spo_settings );
+function save_single_password( $new_value, $old_value ) {
+    if ( '-4' == $new_value ) {
+        if (isset($_POST['blog_pass'])) {
+            $spo_settings = array(
+                'blog_pass' => $_POST['blog_pass']
+            );
+            if ( ! ( get_site_option('privacy_override') != 'yes' && !is_super_admin() && $wpdb->blogid != 1 ) ) {
+                update_option( 'spo_settings', $spo_settings );
+            }
+        }
     }
-    return $option;
+    return $new_value;
 }
 
 function additional_privacy_add_signup_meta($meta) {
@@ -512,19 +540,19 @@ function additional_privacy() {
             $_redirect_to = $dm_map->swap_mapped_url($_redirect_to);
         }
 
-        $_redirect_to = trailingslashit( $_redirect_to );
+        $_redirect_to = urlencode( trailingslashit( $_redirect_to ) );
 
         switch( $privacy ) {
             case '-1': {
                 if ( ! is_user_logged_in() ) {
-                    spo_redirect( wp_login_url( $_redirect_to )."&privacy=1" );
+                    spo_redirect( site_url("wp-login.php?privacy=1&redirect_to=" . $_redirect_to, 'login_post' ) );
                     exit();
                 }
                 break;
             }
             case '-2': {
                 if ( ! is_user_logged_in() ) {
-                    spo_redirect( wp_login_url( $_redirect_to )."&privacy=2" );
+                    spo_redirect( site_url("wp-login.php?privacy=2&redirect_to=" . $_redirect_to, 'login_post' ) );
                     exit();
                 } else {
                     if ( ! current_user_can( 'read' ) ) {
@@ -535,7 +563,7 @@ function additional_privacy() {
             }
             case '-3': {
                 if ( ! is_user_logged_in() ) {
-                    spo_redirect( wp_login_url( $_redirect_to )."&privacy=4" );
+                    spo_redirect( site_url("wp-login.php?privacy=3&redirect_to=" . $_redirect_to, 'login_post' ) );
                     exit();
                 } else {
                     if ( ! current_user_can( 'manage_options' ) ) {
@@ -551,7 +579,7 @@ function additional_privacy() {
 
                 if ( !current_user_can( 'read' ) ) {
                     if ( !isset( $_COOKIE['spo_blog_access'] ) || $value != $_COOKIE['spo_blog_access'] ) {
-                        spo_redirect( wp_login_url( $_redirect_to )."&privacy=4" );
+                        spo_redirect( site_url("wp-login.php?privacy=4&redirect_to=" . $_redirect_to, 'login_post' ) );
                         exit();
                     }
                 }
@@ -571,7 +599,7 @@ function additional_privacy_set_default($blog_id, $user_id) {
         }
         if (get_blog_option($blog_id, "blog_public", 2) == 2) {
             update_blog_option($blog_id, "blog_public", $privacy_default);
-            $wpdb->query( $wpdb->prepare("UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id = %d LIMIT 1", $privacy_default, $blog_id) );
+            update_blog_status($blog_id, "public", $privacy_default);
         }
 }
 
@@ -591,7 +619,7 @@ function additional_privacy_site_admin_options_process() {
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
 
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
-	$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id != '1' AND deleted = 0 AND spam = 0 ", $_POST['privacy_default'] ) );
+        $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id != '1' AND active = 1 AND deleted = 0 AND spam = 0 ", $_POST['privacy_default'] ) );
         setcookie('privacy_update_all_blogs', "1");
     }
 }
@@ -611,6 +639,11 @@ function additional_privacy_modify_menu_items() {
 
 function additional_privacy_deny_message( $privacy ) {
     do_action( 'additional_privacy_deny_message', $privacy );
+
+    $continue = true;
+    $continue = apply_filters( 'additional_privacy_deny_message_continue', true );
+    if ( ! $continue )
+        return;
 
 	header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate');
 	header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
@@ -751,6 +784,19 @@ function additional_privacy_blog_options() {
     <?php endif; ?>
 
     <?php
+    if ( get_site_option('privacy_override') != 'yes' && !is_super_admin() && $wpdb->blogid != 1 ) {
+    ?>
+    <script type="text/javascript">
+        jQuery(document).ready(
+            function() {
+                jQuery('input[name=blog_public]').attr('disabled', true);
+                jQuery('input[name=blog_pass]').attr('disabled', true);
+                jQuery('tr.option-site-visibility').hide();
+            }
+        );
+    </script>
+    <?php
+    }
 }
 
 function additional_privacy_site_admin_options() {
@@ -866,6 +912,13 @@ function additional_privacy_site_admin_options() {
 }
 
 /* Update Notifications Notice */
-global $wpmudev_notices;
-$wpmudev_notices[] = array( 'id'=> 52, 'name'=> 'Multisite Privacy', 'screens' => array( 'settings-network', 'options-reading' ) );
-include_once(plugin_dir_path( __FILE__ ).'external/dash-notice/wpmudev-dash-notification.php');
+if ( !function_exists( 'wdp_un_check' ) ) {
+    function wdp_un_check() {
+        if ( !class_exists('WPMUDEV_Update_Notifications') && current_user_can('edit_users') )
+            echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
+    }
+    add_action( 'admin_notices', 'wdp_un_check', 5 );
+    add_action( 'network_admin_notices', 'wdp_un_check', 5 );
+}
+
+?>
