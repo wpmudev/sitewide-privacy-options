@@ -143,6 +143,11 @@ function additional_privacy_admin_enqueue_scripts($hook) {
  */
 function spo_is_mobile_app() {
 
+    // Early exit if $_SERVER['HTTP_USER_AGENT'] is not set
+    if ( ! isset( $_SERVER['HTTP_USER_AGENT'] ) ) {
+        return false;
+    }
+
     //WordPress for iOS
     if ( stripos( $_SERVER['HTTP_USER_AGENT'], 'wp-iphone' ) !== false ) {
         return true;
