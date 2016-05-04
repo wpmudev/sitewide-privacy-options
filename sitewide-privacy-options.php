@@ -750,7 +750,7 @@ function additional_privacy_blog_options() {
     <?php if ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ): ?>
 
     <input id="blog-privacy-reguser" type="radio" name="blog_public" value="-1" <?php if ( $blog_public == '-1' ) { echo 'checked="checked"'; } ?> <?php echo (additional_privacy_is_pro())?'':'disabled="disabled"'; ?> />
-    <label for="blog-privacy-requser"><?php printf( __( 'Visitors must have a login - anyone that is a registered user of %s can gain access.', 'sitewide-privacy-options' ), $text_network_name ) ?></label>
+    <label for="blog-privacy-reguser"><?php printf( __( 'Visitors must have a login - anyone that is a registered user of %s can gain access.', 'sitewide-privacy-options' ), $text_network_name ) ?></label>
     <br />
     <?php endif ?>
     <?php if ( isset( $privacy_available['private'] ) &&  '1' == $privacy_available['private'] ): ?>
