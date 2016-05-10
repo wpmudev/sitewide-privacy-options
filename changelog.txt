@@ -3,6 +3,9 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.8.5 =
+* Fixed: Fix HTML standard (for attribute added in label tag)
+
 = 1.1.8.4 = 
 * Fixed: Do not display privacy options at sign up if override is disabled
 
