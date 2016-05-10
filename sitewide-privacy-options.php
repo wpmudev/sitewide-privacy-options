@@ -858,20 +858,20 @@ function additional_privacy_site_admin_options() {
         <tr valign="top">
             <th scope="row"><?php _e( 'Available Options', 'sitewide-privacy-options' ) ?></th>
             <td>
-				<label>
-                <input name="privacy_available[network]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ) ? 'checked' : ''; ?> />
+				<label for="privacy_available_network">
+                <input name="privacy_available[network]" id="privacy_available_network" type="checkbox" value="1" <?php echo ( isset( $privacy_available['network'] ) && '1' == $privacy_available['network'] ) ? 'checked' : ''; ?> />
                 <?php _e( 'Only allow logged in users to see all sites.', 'sitewide-privacy-options' ); ?></label>
                 <br />
-				<label>
-                <input name="privacy_available[private]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['private'] ) && '1' == $privacy_available['private'] ) ? 'checked' : ''; ?> />
+				<label for="privacy_available_private">
+                <input name="privacy_available[private]" id="privacy_available_private" type="checkbox" value="1" <?php echo ( isset( $privacy_available['private'] ) && '1' == $privacy_available['private'] ) ? 'checked' : ''; ?> />
                 <?php _e( 'Only allow a registered user to see a site for which they are registered to.', 'sitewide-privacy-options' ); ?></label>
                 <br />
-				<label>
-                <input name="privacy_available[admin]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['admin'] ) && '1' == $privacy_available['admin'] ) ? 'checked' : ''; ?> />
+				<label for="privacy_available_admin">
+                <input name="privacy_available[admin]" id="privacy_available_admin" type="checkbox" value="1" <?php echo ( isset( $privacy_available['admin'] ) && '1' == $privacy_available['admin'] ) ? 'checked' : ''; ?> />
                 <?php _e( 'Only allow administrators of a site to view the site for which they are an admin.', 'sitewide-privacy-options' ); ?></label>
                 <br />
-				<label>
-                <input name="privacy_available[single_pass]" type="checkbox" value="1" <?php echo ( isset( $privacy_available['single_pass'] ) && '1' == $privacy_available['single_pass'] ) ? 'checked' : ''; ?> />
+				<label for="privacy_available_single_pass">
+                <input name="privacy_available[single_pass]" id="privacy_available_single_pass" type="checkbox" value="1" <?php echo ( isset( $privacy_available['single_pass'] ) && '1' == $privacy_available['single_pass'] ) ? 'checked' : ''; ?> />
                 <?php _e( 'Allow Network Administrators to set a single password that any visitors must use to see the site.', 'sitewide-privacy-options' ); ?></label>
                 <br />
             </td>
