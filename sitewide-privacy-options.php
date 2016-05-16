@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/sitewide-privacy-options-for-word
 Description: Adds more levels of privacy and allows you to control them across all sites - or allow users to override them.
 Author: WPMU DEV
 Author URI: http://premium.wpmudev.org
-Version: 1.1.8.5
+Version: 1.1.8.6
 Network: true
 WDP ID: 52
 License: GNU General Public License (Version 2 - GPLv2)
