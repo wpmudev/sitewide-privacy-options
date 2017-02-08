@@ -624,7 +624,7 @@ function additional_privacy_site_admin_options_process() {
     update_site_option( 'privacy_available' , $_POST['privacy_available'] );
 
     if ( isset( $_POST['privacy_update_all_blogs'] ) &&  $_POST['privacy_update_all_blogs'] == 'update' )  {
-        $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id != '1' AND active = 1 AND deleted = 0 AND spam = 0 ", $_POST['privacy_default'] ) );
+        $wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->blogs} SET public = %d WHERE blog_id != '1' AND archived = 0 AND deleted = 0 AND spam = 0 ", $_POST['privacy_default'] ) );
         setcookie('privacy_update_all_blogs', "1");
     }
 }
