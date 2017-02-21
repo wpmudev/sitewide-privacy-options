@@ -118,7 +118,7 @@ function additional_privacy_admin_init() {
                 }
                 ?>
                         window.location ='<?php echo ($blog_count > $blogs_completed)?
-                            network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed+1)):
+                            network_admin_url('settings.php?privacy_update_all_blogs=step&offset='.($blogs_completed)):
                             network_admin_url('settings.php?privacy_update_all_blogs=complete&message=blog_settings_updated&offset='.$blogs_completed); ?>';
 
                         document.cookie="privacy_update_all_blogs=<?php echo ($blog_count > $blogs_completed)?1:0; ?>";
