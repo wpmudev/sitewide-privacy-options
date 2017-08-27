@@ -598,14 +598,16 @@ function additional_privacy() {
 
 function additional_privacy_set_default($blog_id, $user_id) {
 	global $wpdb;
-	$privacy_default = get_site_option('privacy_default');
-        if (!$privacy_default) {
-            $privacy_default = 1;
-        }
-        if (get_blog_option($blog_id, "blog_public", 2) == 2) {
-            update_blog_option($blog_id, "blog_public", $privacy_default);
-            update_blog_status($blog_id, "public", $privacy_default);
-        }
+	$allowed_public_vals = array( 1, 0, -1, -2, -3 ); // We don't use -4 value which is for using password to access site
+    	$privacy_default = get_site_option('privacy_default');
+    	if ( empty( $privacy_default ) || ! in_array( $privacy_default, $allowed_public_vals ) ) {
+        	return;
+    	}
+    
+    	if ( get_blog_option( $blog_id, "blog_public", 2 ) != $privacy_default ) {
+        	update_blog_option( $blog_id, "blog_public", $privacy_default );		
+        	update_blog_status( $blog_id, "public", $privacy_default );
+    	}
 }
 
 function additional_privacy_site_admin_options_process() {
