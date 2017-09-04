@@ -3,6 +3,12 @@ Authors: Ivan Shaovchev, Andrew Billits, Andrey Shipilov (Incsub), S H Mohanjith
 
 == Changelog ==
 
+= 1.1.9 =
+* Fix: When the Update all sites option selected, any admin link will redirect
+to complete the update
+* Fix: Active column does not exist in blogs table
+* Fix: The privacy_default does not apply for new blogs created
+
 = 1.1.8.6 =
 * Fixed: Plugin folder name
 
