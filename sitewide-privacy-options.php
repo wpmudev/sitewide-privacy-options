@@ -42,7 +42,7 @@ add_action('wpmu_options', 'additional_privacy_site_admin_options');
 add_action('update_wpmu_options', 'additional_privacy_site_admin_options_process');
 add_action('blog_privacy_selector', 'additional_privacy_blog_options');
 add_action('admin_menu', 'additional_privacy_modify_menu_items', 99);
-add_action('wpmu_new_blog', 'additional_privacy_set_default', 100, 2);
+add_action('wp_insert_site', 'additional_privacy_set_default', 100 );
 add_action('admin_enqueue_scripts', 'additional_privacy_admin_enqueue_scripts');
 add_action('admin_init', 'additional_privacy_admin_init');
 
@@ -596,8 +596,15 @@ function additional_privacy() {
     setcookie( "spo_{$blog_id}_fa", $file_value, time() + 1800, $current_blog->path);
 }
 
-function additional_privacy_set_default($blog_id, $user_id) {
-	global $wpdb;
+function additional_privacy_set_default( $new_site ) {
+
+    	global $wpdb;
+
+    	if ( ! $new_site instanceof WP_Site ) {
+        	return;    
+    	}
+
+    	$blog_id = $new_site->blog_id;
 	$allowed_public_vals = array( 1, 0, -1, -2, -3 ); // We don't use -4 value which is for using password to access site
     	$privacy_default = get_site_option('privacy_default');
     	if ( empty( $privacy_default ) || ! in_array( $privacy_default, $allowed_public_vals ) ) {
